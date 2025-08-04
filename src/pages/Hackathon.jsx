@@ -75,7 +75,10 @@ export default function Hackathon() {
     navigate(`/code-editor?problemId=${problemId}`);
   };
 
-  const filteredQuestions = hackathonQuestions.filter(q => {
+  // Defensive: Ensure hackathonQuestions is always an array
+  const safeQuestions = Array.isArray(hackathonQuestions) ? hackathonQuestions : [];
+
+  const filteredQuestions = safeQuestions.filter(q => {
     const difficultyMatch = selectedDifficulty === "All" || q.difficulty === selectedDifficulty;
     const categoryMatch = selectedCategory === "All" || q.category === selectedCategory;
     return difficultyMatch && categoryMatch;
@@ -160,7 +163,7 @@ export default function Hackathon() {
               </p>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                {question.tags.map((tag, tagIndex) => (
+                {(question.tags || []).map((tag, tagIndex) => (
                   <span
                     key={tagIndex}
                     className="px-2 py-1 bg-gray-700 rounded-full text-xs text-gray-300"
