@@ -1,6 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
+
+// The necessary CSS for the tilt effect
+const tiltStyle = `
+  .tilt-card {
+    transform: perspective(1000px) rotateX(calc((var(--py, 0.5) - 0.5) * 40deg)) rotateY(calc((var(--px, 0.5) - 0.5) * -40deg));
+    transition: transform 0.6s ease;
+  }
+`;
 
 export default function Register() {
   const navigate = useNavigate();
@@ -9,6 +17,38 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // --- Tilt Logic ---
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleMouseMove = (e) => {
+      const { clientX, clientY, currentTarget } = e;
+      const { clientWidth, clientHeight, offsetLeft, offsetTop } = currentTarget;
+      const x = (clientX - offsetLeft) / clientWidth;
+      const y = (clientY - offsetTop) / clientHeight;
+      card.style.setProperty('--px', x);
+      card.style.setProperty('--py', y);
+    };
+    
+    const handleMouseLeave = () => {
+        card.style.setProperty('--px', 0.5);
+        card.style.setProperty('--py', 0.5);
+    }
+
+    card.addEventListener('mousemove', handleMouseMove);
+    card.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      card.removeEventListener('mousemove', handleMouseMove);
+      card.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
+  // --- End Tilt Logic ---
+
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -38,6 +78,8 @@ export default function Register() {
 
   return (
     <div className="relative flex justify-center items-center min-h-screen w-full overflow-hidden">
+      <style>{tiltStyle}</style>
+      
       {/* Background GIF */}
       <div
         className="absolute inset-0 bg-cover bg-center z-0"
@@ -48,13 +90,13 @@ export default function Register() {
       ></div>
       <div className="absolute inset-0 bg-black/50 z-0"></div>
 
-      {/* Liquid Glass Card */}
+      {/* Liquid Glass Card with ref and class */}
       <form
+        ref={cardRef}
         onSubmit={handleRegister}
-        className="relative z-10 w-[90%] sm:w-[420px] p-8 rounded-[2rem]
+        className="tilt-card relative z-10 w-[90%] sm:w-[420px] p-8 rounded-[2rem]
                    backdrop-blur-3xl bg-white/10 border border-white/30
-                   shadow-[0_0_30px_rgba(255,0,255,0.6),inset_0_0_30px_rgba(255,255,255,0.05)]
-                   transition-all hover:scale-[1.02] duration-300"
+                   shadow-[0_0_30px_rgba(255,0,255,0.6),inset_0_0_30px_rgba(255,255,255,0.05)]"
       >
         <h2 className="text-4xl font-semibold text-white mb-6 text-center drop-shadow-md">
           Create Account
