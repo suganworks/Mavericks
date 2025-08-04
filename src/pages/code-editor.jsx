@@ -78,10 +78,10 @@ Test cases:
 ${testCasesText}
 
 Return results in this format:
+- provide the output log of the code, give actual output for each test case.
 - "✅ Success! All test cases passed." if correct.
 - "❌ Failed Test Case X: ..." if incorrect.
 - "💥 Compilation Error: ..." if compile/runtime error.
-provide the output in a single line without any additional text.
 `;
 
     try {
@@ -126,15 +126,28 @@ provide the output in a single line without any additional text.
           <h2 className="text-xl font-bold mb-4">Problems</h2>
           {problems.length > 0 && (
             <select
-              className="w-full p-2 mb-4 bg-gray-800/50 border border-gray-600 rounded"
+              className="w-full p-2 mb-4 bg-gray-900/70 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
               onChange={(e) => handleProblemChange(e.target.value)}
               value={currentProblem?.id || ""}
             >
-              {problems.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title} ({p.difficulty})
-                </option>
-              ))}
+              {problems.map((p) => {
+                let diffIcon = "🟢";
+                if (p.difficulty?.toLowerCase() === "medium") {
+                  diffIcon = "🟡";
+                } else if (p.difficulty?.toLowerCase() === "hard") {
+                  diffIcon = "🔴";
+                }
+
+                return (
+                  <option
+                    key={p.id}
+                    value={p.id}
+                    className="bg-gray-900 text-white p-2"
+                  >
+                    {diffIcon} {p.title}
+                  </option>
+                );
+              })}
             </select>
           )}
           {currentProblem && (
@@ -189,7 +202,7 @@ provide the output in a single line without any additional text.
           </div>
 
           {/* Console Output */}
-          <div className="glass-panel p-4 h-32 overflow-y-auto font-mono text-sm whitespace-pre-wrap">
+          <div className="glass-panel p-4 h-30 overflow-y-auto font-mono text-sm whitespace-pre-wrap">
             {output}
           </div>
         </div>
