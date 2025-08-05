@@ -24,6 +24,8 @@ export default function CodeEditor() {
   const [output, setOutput] = useState("Select a problem to start coding.");
   const [mood, setMood] = useState(moods.neutral);
   const [isRunning, setIsRunning] = useState(false);
+  const [userId, setUserId] = useState(null); // <-- Added for tracking user
+  const [submissions, setSubmissions] = useState([]); // <-- Add this line
 
   useEffect(() => {
     const fetchProblems = async () => {
@@ -36,7 +38,84 @@ export default function CodeEditor() {
       }
     };
     fetchProblems();
+
+    // Fetch user ID from auth or users table
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      } else {
+        const { data } = await supabase.from("users").select("id").limit(1).single();
+        if (data) setUserId(data.id);
+      }
+    };
+    fetchUser();
   }, []);
+
+
+    const fetchProblemID = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+const { data, error } = await supabase
+      .from("submissions")
+      .select("problem_id, code, language, output")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+
+      }
+    };
+
+
+    useEffect(()=>{
+      console.log(currentProblem)
+
+      if (currentProblem) {
+        
+      }
+
+    },[currentProblem])
+
+// const fetchLastSubmission = async () => {
+//   if (!problem_id || !currentProblem) return;
+
+//   try {
+//     // Get last submission for this specific problem by this user
+//     const { data, error } = await supabase
+//       .from("submissions")
+//       .select("problem_id, code, language, output")
+//       .eq("user_id", userId)
+//       .order("created_at", { ascending: false })
+//       .limit(1);
+
+//     if (error) {
+//       console.error("❌ Error fetching submissions:", error.message);
+//       return;
+//     }
+
+//     if (data && data.length > 0) {
+//       const lastSubmission = data[0];
+
+//       // ✅ Check if problem_id matches the current problem
+//       if (String(lastSubmission.problem_id) === String(currentProblem.id)) {
+//         setCode(lastSubmission.code || ""); // Fill Monaco Editor
+//         setLanguage(lastSubmission.language || "python");
+//         setOutput(lastSubmission.output || ""); // Optional: show last output
+//       } else {
+//         // If no match, clear editor
+//         setCode("");
+//         setOutput("Ready to code for this problem.");
+//       }
+//     } else {
+//       // No previous submission found
+//       setCode("");
+//       setOutput("Ready to code for this problem.");
+//     }
+//   } catch (err) {
+//     console.error("❌ Error:", err.message);
+//   }
+// };
 
   const handleProblemChange = (id) => {
     const selected = problems.find((p) => p.id === id);
@@ -63,7 +142,7 @@ export default function CodeEditor() {
       .join("\n");
 
     const prompt = `
-You are a strict programming judge.
+You are a compiler, strictly give only the output for the problem provided.
 Evaluate the following ${language} code for the problem "${currentProblem.title}".
 
 Problem:
@@ -78,7 +157,8 @@ Test cases:
 ${testCasesText}
 
 Return results in this format:
-- provide the output log of the code, give actual output for each test case.
+- give actual output for each test case.
+-give time complexity and space complexity.
 - "✅ Success! All test cases passed." if correct.
 - "❌ Failed Test Case X: ..." if incorrect.
 - "💥 Compilation Error: ..." if compile/runtime error.
@@ -111,6 +191,38 @@ Return results in this format:
       setOutput(`💥 API Error: ${err.message}`);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  // --- Added Submit Function ---
+  const submitCode = async () => {
+    if (!userId) {
+      alert("⚠️ User not logged in.");
+      return;
+    }
+    if (!currentProblem) {
+      alert("⚠️ No problem selected.");
+      return;
+    }
+    if (!code.trim()) {
+      alert("⚠️ Write some code before submitting.");
+      return;
+    }
+
+    const { error } = await supabase.from("submissions").insert([
+      {
+        user_id: userId,
+        problem_id: currentProblem.id,
+        code,
+        language,
+        test_cases: currentProblem.test_cases
+      }
+    ]);
+
+    if (error) {
+      alert("❌ Error submitting: " + error.message);
+    } else {
+      alert("✅ Submission saved successfully!");
     }
   };
 
@@ -169,7 +281,7 @@ Return results in this format:
 
         {/* Main */}
         <div className="lg:w-2/3 flex flex-col">
-          <div className="glass-panel p-4 mb-4 flex justify-between items-center">
+          <div className="glass-panel p-4 mb-4 flex gap-2 items-center">
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -187,6 +299,13 @@ Return results in this format:
               }`}
             >
               {isRunning ? "Running..." : "Run Code"}
+            </button>
+            {/* Submit Button */}
+            <button
+              onClick={submitCode}
+              className="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700"
+            >
+              Submit
             </button>
           </div>
 
