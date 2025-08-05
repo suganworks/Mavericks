@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Import the new background component first
 import ParticleBackground from "./components/ParticleBackground";
+import PageWithNavbar from "./components/PageWithNavbar";
 
 // Import all page components from your 'src/pages' directory
 import LandingPage from "./pages/LandingPage";
@@ -35,29 +36,22 @@ export default function App() {
           content rendered by the Routes will appear on top of the background.
         */}
         <Routes>
-          {/* --- Public Routes --- */}
+          {/* Public routes (no navbar) */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* --- Standard User Routes --- */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/menu" element={<Menu />} />
-          <Route path="/code-editor" element={<CodeEditor />} />
-          <Route path="/hackathon" element={<Hackathon />} />
-          <Route path="/ai-explainer" element={<AIConceptExplainer />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/ai-resume" element={<AIResumeConsolidator />} />
-
-          {/* --- Protected Admin Route --- */}
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } 
-          />
+          {/* All other routes with navbar */}
+          <Route path="/dashboard" element={<PageWithNavbar><Dashboard /></PageWithNavbar>} />
+          <Route path="/menu" element={<PageWithNavbar><Menu /></PageWithNavbar>} />
+          <Route path="/code-editor" element={<PageWithNavbar><CodeEditor /></PageWithNavbar>} />
+          <Route path="/editor/:problemId" element={<PageWithNavbar><CodeEditor /></PageWithNavbar>} />
+          <Route path="/hackathon" element={<PageWithNavbar><Hackathon /></PageWithNavbar>} />
+          <Route path="/ai-explainer" element={<PageWithNavbar><AIConceptExplainer /></PageWithNavbar>} />
+          <Route path="/leaderboard" element={<PageWithNavbar><Leaderboard /></PageWithNavbar>} />
+          <Route path="/ai-resume" element={<PageWithNavbar><AIResumeConsolidator /></PageWithNavbar>} />
+          {/* Admin route */}
+          <Route path="/admin/dashboard" element={<AdminRoute><PageWithNavbar><AdminDashboard /></PageWithNavbar></AdminRoute>} />
         </Routes>
       </div>
     </Router>
