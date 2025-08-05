@@ -281,17 +281,17 @@ export default function CodeEditor() {
     }
   };
 
- const submitCode = async () => {
+  const submitCode = async () => {
     if (!user) {
-      alert("⚠ User not logged in.");
+      alert("âš ï¸ User not logged in.");
       return;
     }
     if (!currentProblem) {
-      alert("⚠ No problem selected.");
+      alert("âš ï¸ No problem selected.");
       return;
     }
     if (!code.trim()) {
-      alert("⚠ Write some code before submitting.");
+      alert("âš ï¸ Write some code before submitting.");
       return;
     }
 
@@ -301,17 +301,17 @@ export default function CodeEditor() {
         problem_id: currentProblem.id,
         code,
         language,
+        output, // Save the last run output with the submission
         test_cases: currentProblem.test_cases
       }
     ]);
 
     if (error) {
-      alert("❌ Error submitting: " + error.message);
+      alert("âŒ Error submitting: " + error.message);
     } else {
-      alert("✅ Submission saved successfully!");
+      alert("âœ… Submission saved successfully!");
     }
   };
-
 
   const handleProblemSelect = (selectedProblemId) => {
     if (selectedProblemId) {
@@ -1025,4 +1025,5 @@ export default function CodeEditor() {
         }
       `}</style>
     </div>
-  )};
+  );
+

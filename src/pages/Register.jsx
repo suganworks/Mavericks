@@ -63,6 +63,11 @@ export default function Register() {
           id: data.user.id,
           username: username,
           email: email,
+          xp: 0,
+          level: 1,
+          badge: 'Rookie Coder',
+          badge_description: 'Complete challenges to earn badges',
+          preferred_mode: 'Classic'
         });
         if (insertError) throw insertError;
       }
