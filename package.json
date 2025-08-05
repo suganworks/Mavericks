@@ -23,6 +23,7 @@
     "@uiw/react-codemirror": "^4.24.2",
     "autoprefixer": "^10.4.21",
     "axios": "^1.11.0",
+    "chart.js": "^4.5.0",
     "dotenv": "^17.2.1",
     "framer-motion": "^12.23.12",
     "gsap": "^3.13.0",
@@ -34,8 +35,10 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.1",
+    "react-tsparticles": "^2.12.2",
     "tailwindcss": "^3.4.17",
-    "thememirror": "^2.0.1"
+    "thememirror": "^2.0.1",
+    "tsparticles-slim": "^2.12.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
