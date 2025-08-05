@@ -1,6 +1,6 @@
 import React from 'react';
 
-// This is the component for the 4-node progress bar from the PDF
+// This is the component for the 4-node progress bar with timestamps and hover details
 export default function WorkflowProgressBar({ user }) {
   const Tooltip = ({ text, children }) => (
     <div className="group relative">
@@ -10,6 +10,36 @@ export default function WorkflowProgressBar({ user }) {
       </div>
     </div>
   );
+
+  // Format date and time for display
+  const formatDateTime = (timestamp) => {
+    if (!timestamp) return 'Pending';
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  };
+
+  // Get tooltip text based on node type and user data
+  const getTooltipText = (nodeType) => {
+    if (!user.workflow) return 'No workflow data available';
+    
+    const node = user.workflow[nodeType];
+    if (!node || !node.completed) return 'Not completed yet';
+    
+    switch (nodeType) {
+      case 'profile_loaded':
+        return `Profile created on ${new Date(node.timestamp).toLocaleDateString()}`;
+      case 'skills_evaluated':
+        return `Skills: ${user.skills.map(s => `${s.name} (${s.level})`).join(', ') || 'None'}`;
+      case 'assessment_completed':
+        if (!user.latest_assessment) return 'Assessment not taken';
+        return `Score: ${user.latest_assessment.score}/${user.latest_assessment.total} (${user.latest_assessment.duration_minutes} minutes)`;
+      case 'learning_path_generated':
+        if (!user.learning_path_generated) return 'Pending assessment completion';
+        return `Learning path: ${user.learning_path.join(', ') || 'None'}`;
+      default:
+        return 'Unknown step';
+    }
+  };
 
   return (
     <div>
@@ -21,45 +51,48 @@ export default function WorkflowProgressBar({ user }) {
         <div className="relative flex items-center">
           <div className="z-10 flex-shrink-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center ring-8 ring-gray-800">✓</div>
           <div className="ml-4">
-            <Tooltip text={`Registered on ${new Date(user.last_updated).toLocaleDateString()}`}>
+            <Tooltip text={getTooltipText('profile_loaded')}>
               <h5 className="font-medium text-white">Profile Loaded</h5>
-              <p className="text-xs text-gray-400">{new Date(user.last_updated).toLocaleTimeString()}</p>
+              <p className="text-xs text-gray-400">{user.workflow?.profile_loaded?.timestamp ? formatDateTime(user.workflow.profile_loaded.timestamp) : 'Pending'}</p>
             </Tooltip>
           </div>
         </div>
         
         {/* Node 2: Skills Evaluated */}
         <div className="relative flex items-center">
-          <div className={`z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ring-8 ring-gray-800 ${user.skills.length > 0 ? 'bg-cyan-500' : 'bg-gray-600'}`}>
-            {user.skills.length > 0 && '✓'}
+          <div className={`z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ring-8 ring-gray-800 ${user.workflow?.skills_evaluated?.completed ? 'bg-cyan-500' : 'bg-gray-600'}`}>
+            {user.workflow?.skills_evaluated?.completed && '✓'}
           </div>
           <div className="ml-4">
-             <Tooltip text={user.skills.map(s => s.name).join(', ') || 'No skills found'}>
-              <h5 className={`font-medium ${user.skills.length > 0 ? 'text-white' : 'text-gray-500'}`}>Skills Evaluated</h5>
+             <Tooltip text={getTooltipText('skills_evaluated')}>
+              <h5 className={`font-medium ${user.workflow?.skills_evaluated?.completed ? 'text-white' : 'text-gray-500'}`}>Skills Evaluated</h5>
+              <p className="text-xs text-gray-400">{user.workflow?.skills_evaluated?.timestamp ? formatDateTime(user.workflow.skills_evaluated.timestamp) : 'Pending'}</p>
             </Tooltip>
           </div>
         </div>
 
         {/* Node 3: Assessment Completed */}
         <div className="relative flex items-center">
-          <div className={`z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ring-8 ring-gray-800 ${user.latest_assessment ? 'bg-green-500' : 'bg-gray-600'}`}>
-            {user.latest_assessment && '✓'}
+          <div className={`z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ring-8 ring-gray-800 ${user.workflow?.assessment_completed?.completed ? 'bg-green-500' : 'bg-gray-600'}`}>
+            {user.workflow?.assessment_completed?.completed && '✓'}
           </div>
           <div className="ml-4">
-            <Tooltip text={user.latest_assessment ? `Score: ${user.latest_assessment.score}/${user.latest_assessment.total}` : 'No assessment taken'}>
-              <h5 className={`font-medium ${user.latest_assessment ? 'text-white' : 'text-gray-500'}`}>Assessment Completed</h5>
+            <Tooltip text={getTooltipText('assessment_completed')}>
+              <h5 className={`font-medium ${user.workflow?.assessment_completed?.completed ? 'text-white' : 'text-gray-500'}`}>Assessment Completed</h5>
+              <p className="text-xs text-gray-400">{user.workflow?.assessment_completed?.timestamp ? formatDateTime(user.workflow.assessment_completed.timestamp) : 'Pending'}</p>
             </Tooltip>
           </div>
         </div>
 
         {/* Node 4: Learning Path Generated */}
         <div className="relative flex items-center">
-          <div className={`z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ring-8 ring-gray-800 ${user.learning_path_generated ? 'bg-yellow-500' : 'bg-gray-600'}`}>
-            {user.learning_path_generated && '✓'}
+          <div className={`z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ring-8 ring-gray-800 ${user.workflow?.learning_path_generated?.completed ? 'bg-yellow-500' : 'bg-gray-600'}`}>
+            {user.workflow?.learning_path_generated?.completed && '✓'}
           </div>
           <div className="ml-4">
-            <Tooltip text={user.learning_path_generated ? 'Path available on user dashboard' : 'Pending low score on assessment'}>
-              <h5 className={`font-medium ${user.learning_path_generated ? 'text-white' : 'text-gray-500'}`}>Learning Path Generated</h5>
+            <Tooltip text={getTooltipText('learning_path_generated')}>
+              <h5 className={`font-medium ${user.workflow?.learning_path_generated?.completed ? 'text-white' : 'text-gray-500'}`}>Learning Path Generated</h5>
+              <p className="text-xs text-gray-400">{user.workflow?.learning_path_generated?.timestamp ? formatDateTime(user.workflow.learning_path_generated.timestamp) : 'Pending'}</p>
             </Tooltip>
           </div>
         </div>

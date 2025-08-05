@@ -4,7 +4,7 @@ export default function PageWithNavbar({ children }) {
   return (
     <>
       <Navbar />
-      <div>{children}</div>
+      <div className="min-h-screen">{children}</div>
     </>
   );
 }

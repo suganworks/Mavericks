@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { FaGoogle, FaGithub } from "react-icons/fa";
 
 // The necessary CSS for the tilt effect
 const tiltStyle = `
@@ -76,6 +77,40 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    setLoading(true);
+    setErrorMsg("");
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/dashboard'
+      }
+    });
+    
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    }
+  };
+
+  const handleGithubSignUp = async () => {
+    setLoading(true);
+    setErrorMsg("");
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: window.location.origin + '/dashboard'
+      }
+    });
+    
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative flex justify-center items-center min-h-screen w-full overflow-hidden">
       <style>{tiltStyle}</style>
@@ -142,6 +177,33 @@ export default function Register() {
         >
           {loading ? "Registering..." : "Register"}
         </button>
+
+        <div className="flex items-center my-4">
+          <div className="flex-grow h-px bg-white/20"></div>
+          <span className="px-3 text-sm text-gray-300">OR</span>
+          <div className="flex-grow h-px bg-white/20"></div>
+        </div>
+
+        <div className="flex gap-4 mb-4">
+          <button
+            type="button"
+            onClick={handleGoogleSignUp}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white
+                       bg-red-500 hover:bg-red-600 transition-all duration-300 disabled:opacity-50"
+          >
+            <FaGoogle /> Google
+          </button>
+          <button
+            type="button"
+            onClick={handleGithubSignUp}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white
+                       bg-gray-700 hover:bg-gray-800 transition-all duration-300 disabled:opacity-50"
+          >
+            <FaGithub /> GitHub
+          </button>
+        </div>
 
         <p className="text-gray-300 mt-6 text-center">
           Already have an account?{" "}
