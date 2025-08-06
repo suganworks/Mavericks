@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-// Import the new background component first
+// Import the background component first
 import ParticleBackground from "./components/ParticleBackground";
 import PageWithNavbar from "./components/PageWithNavbar";
 
@@ -25,12 +25,12 @@ export default function App() {
     <Router>
       {/*
         The ParticleBackground component is placed here, at the top level.
-        It uses absolute positioning and a z-index of -1 to render itself
+        It uses fixed positioning and a z-index of -1 to render itself
         behind all other content, creating a seamless background across all routes.
       */}
       <ParticleBackground />
 
-      <div className="relative z-10">
+      <div className="relative z-10 min-h-screen">
         {/*
           This wrapper div with a relative z-index ensures that all page
           content rendered by the Routes will appear on top of the background.

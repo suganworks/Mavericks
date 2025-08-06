@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useTilt } from "../hooks/useTilt";
+import { FaGoogle, FaGithub } from "react-icons/fa";
 
 const tiltStyle = `
   .tilt-card {
@@ -31,6 +32,40 @@ export default function Login() {
       navigate("/dashboard");
     }
     setLoading(false);
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setErrorMsg("");
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/dashboard'
+      }
+    });
+    
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    }
+  };
+
+  const handleGithubLogin = async () => {
+    setLoading(true);
+    setErrorMsg("");
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: window.location.origin + '/dashboard'
+      }
+    });
+    
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,8 +110,34 @@ export default function Login() {
         >
           {loading ? "Loading..." : "Login"}
         </button>
+
+        <div className="flex items-center my-4">
+          <div className="flex-grow h-px bg-gray-400/40"></div>
+          <span className="px-3 text-sm text-gray-300">OR</span>
+          <div className="flex-grow h-px bg-gray-400/40"></div>
+        </div>
+
+        <div className="flex gap-4 mb-4">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-all"
+          >
+            <FaGoogle /> Google
+          </button>
+          <button
+            type="button"
+            onClick={handleGithubLogin}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white bg-gray-700 hover:bg-gray-800 transition-all"
+          >
+            <FaGithub /> GitHub
+          </button>
+        </div>
+
         <p className="text-gray-300 text-sm mt-4 text-center">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <span
             onClick={() => navigate("/register")}
             className="text-cyan-400 hover:underline cursor-pointer"
