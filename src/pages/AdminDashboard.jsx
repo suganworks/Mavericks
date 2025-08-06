@@ -1,13 +1,7 @@
-<<<<<<< HEAD
-import React, { useState, useMemo } from 'react';
-import { mockUsers, mockHackathons } from '../data/mockUser'; // Ensure path is correct
-
-// --- Import your existing components ---
-=======
 import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
 import AdminStatsBar from '../components/AdminStatsBar';
+import SkillAnalyticsChart from '../components/SkillAnalyticsChart';
 import WorkflowProgressBar from '../components/WorkflowProgressBar';
 import { Line } from 'react-chartjs-2';
 import {
@@ -32,9 +26,7 @@ ChartJS.register(
   Legend
 );
 
-// --- Internal components specific to this page ---
-// (These can also be moved to separate files if you prefer)
-
+// This is a self-contained component for a single row in the user list.
 const UserRow = ({ user }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -83,16 +75,7 @@ const UserRow = ({ user }) => {
         <tr className="bg-black/20">
           <td colSpan="5" className="p-6">
             <div className="grid md:grid-cols-2 gap-8">
-              {/* Using the imported WorkflowProgressBar component */}
               <WorkflowProgressBar user={user} />
-<<<<<<< HEAD
-              <div>
-                <h4 className="font-bold text-lg text-white mb-4">Manual Overrides</h4>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => alert(`Re-assessing ${user.username}...`)} className="px-3 py-1.5 text-sm font-semibold text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition">Re-assess</button>
-                  <button onClick={() => alert(`Updating profile for ${user.username}...`)} className="px-3 py-1.5 text-sm font-semibold text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition">Update Profile</button>
-                  <button onClick={() => alert(`Generating report for ${user.username}...`)} className="px-3 py-1.5 text-sm font-semibold text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition">Generate Report</button>
-=======
               <div className="space-y-6">
                 <div>
                   <h4 className="font-bold text-lg text-white mb-4">Manual Overrides</h4>
@@ -126,7 +109,6 @@ const UserRow = ({ user }) => {
                     <div className="text-gray-400">Last Updated:</div>
                     <div className="text-gray-300">{new Date(user.last_updated).toLocaleString()}</div>
                   </div>
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
                 </div>
               </div>
             </div>
@@ -137,101 +119,8 @@ const UserRow = ({ user }) => {
   );
 };
 
-const HackathonManager = ({ hackathons, users }) => {
-    const getUserName = (userId) => users.find(u => u.id === userId)?.username || 'Unknown User';
-
-    return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold text-white">Hackathon Management</h3>
-                <button className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition">Create Hackathon</button>
-            </div>
-            <div className="space-y-4">
-                {hackathons.map(hackathon => (
-                    <div key={hackathon.id} className="bg-black/20 p-4 rounded-lg">
-                        <h4 className="text-xl font-bold text-white">{hackathon.name}</h4>
-                        <p className={`text-sm font-medium ${hackathon.status === 'Active' ? 'text-green-400' : 'text-yellow-400'}`}>{hackathon.status}</p>
-                        <div className="mt-4">
-                            <h5 className="font-semibold mb-2">Submissions ({hackathon.submissions.length})</h5>
-                            {hackathon.submissions.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {hackathon.submissions.map(sub => (
-                                        <li key={sub.userId} className="flex justify-between items-center text-sm">
-                                            <span>{getUserName(sub.userId)}</span>
-                                            <span className="font-bold text-purple-400">{sub.result}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : <p className="text-gray-400 text-sm">No submissions yet.</p>}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const ReportsAndAnalytics = ({ users }) => {
-    const skillCounts = useMemo(() => {
-        const counts = {};
-        users.forEach(user => {
-            user.skills.forEach(skill => {
-                counts[skill.name] = (counts[skill.name] || 0) + 1;
-            });
-        });
-        return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    }, [users]);
-    
-    return (
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
-        <h3 className="text-2xl font-bold text-white mb-4">Reports & Analytics</h3>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h4 className="font-semibold text-lg text-white mb-2">Top Skills by User Count</h4>
-            <div className="space-y-2">
-              {skillCounts.map(([skill, count]) => (
-                <div key={skill}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-300">{skill}</span>
-                    <span className="text-sm font-medium text-gray-400">{count} Users</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2.5">
-                    <div className="bg-purple-600 h-2.5 rounded-full" style={{ width: `${(count / users.length) * 100}%` }}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="font-semibold text-lg text-white mb-2">User Engagement</h4>
-             <p className="text-sm text-gray-400">Average assessment score: <span className="font-bold text-white">
-                {(users.filter(u => u.latest_assessment).reduce((acc, u) => acc + u.latest_assessment.score, 0) / users.filter(u => u.latest_assessment).length).toFixed(2)}
-             </span></p>
-             <p className="text-sm text-gray-400">Learning paths generated: <span className="font-bold text-white">
-                {users.filter(u => u.learning_path_generated).length} / {users.length}
-             </span></p>
-             <button className="mt-4 px-3 py-1.5 text-sm font-semibold text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition">Generate Full Platform Report</button>
-          </div>
-        </div>
-      </div>
-    );
-};
-
-
-// --- Main Dashboard Component ---
-
+// This is the main page component for the entire admin dashboard.
 export default function AdminDashboard() {
-<<<<<<< HEAD
-  const [allUsers] = useState(mockUsers);
-  const [allHackathons] = useState(mockHackathons);
-  const [activeTab, setActiveTab] = useState('users');
-
-  // State for filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSkill, setSelectedSkill] = useState('');
-  const [scoreFilter, setScoreFilter] = useState({ min: 0, max: 10 });
-  const [learningPathFilter, setLearningPathFilter] = useState(''); // 'yes', 'no', ''
-=======
   const [allUsers, setAllUsers] = useState([]);
   const [hackathons, setHackathons] = useState([]);
   const [analytics, setAnalytics] = useState({
@@ -361,38 +250,22 @@ export default function AdminDashboard() {
     
     fetchAnalytics();
   }, [])
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
 
-  // Memoized calculation to filter users
+  // Memoized calculation to filter users only when inputs change
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
       const lowerSearchTerm = searchTerm.toLowerCase();
       const matchesSearch = user.username.toLowerCase().includes(lowerSearchTerm) || 
                            user.email.toLowerCase().includes(lowerSearchTerm);
       const matchesSkill = selectedSkill ? user.skills.some(s => s.name === selectedSkill) : true;
-<<<<<<< HEAD
-      const latestScore = user.latest_assessment?.score;
-      const matchesScore = latestScore !== undefined ? latestScore >= scoreFilter.min && latestScore <= scoreFilter.max : (scoreFilter.min === 0);
-      const matchesLearningPath = learningPathFilter ? (learningPathFilter === 'yes' ? user.learning_path_generated : !user.learning_path_generated) : true;
-      
-      return matchesSearch && matchesSkill && matchesScore && matchesLearningPath;
-    });
-  }, [allUsers, searchTerm, selectedSkill, scoreFilter, learningPathFilter]);
-=======
       const matchesStatus = selectedStatus ? user.status === selectedStatus : true;
       return matchesSearch && matchesSkill && matchesStatus;
     });
   }, [allUsers, searchTerm, selectedSkill, selectedStatus]);
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
 
+  // Memoized calculation to get a unique list of all skills
   const allSkills = useMemo(() => [...new Set(allUsers.flatMap(u => u.skills.map(s => s.name)))].sort(), [allUsers]);
   
-<<<<<<< HEAD
-  const stats = {
-    totalUsers: allUsers.length,
-    assessmentsTaken: allUsers.filter(u => u.assessments.length > 0).length,
-    activeHackathons: allHackathons.filter(h => h.status === 'Active').length,
-=======
   // Memoized calculation to get a unique list of all statuses
   const allStatuses = useMemo(() => [...new Set(allUsers.map(u => u.status))].sort(), [allUsers]);
   
@@ -401,7 +274,6 @@ export default function AdminDashboard() {
     totalUsers: allUsers.length,
     assessmentsTaken: allUsers.filter(u => u.latest_assessment).length,
     activeHackathons: hackathons.filter(h => h.status === 'Active').length,
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
     skillsInDB: allSkills.length
   };
 
@@ -470,46 +342,16 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen text-gray-200 font-sans p-4 md:p-8 bg-gray-900">
+    // The background color has been removed from this div to allow the particle background to show through
+    <div className="min-h-screen text-gray-200 font-sans p-4 md:p-8">
       <div className="container mx-auto space-y-8">
         
+        {/* Page Header */}
         <div>
           <h1 className="text-4xl font-bold text-white">Admin Dashboard</h1>
-          <p className="text-gray-400 mt-2">Oversee user activity, manage platform events, and analyze performance.</p>
+          <p className="text-gray-400 mt-2">Oversee user activity and manage platform events.</p>
         </div>
         
-<<<<<<< HEAD
-        {/* Using the imported AdminStatsBar component */}
-        <AdminStatsBar stats={stats} />
-
-        <div className="border-b border-gray-700">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                <button onClick={() => setActiveTab('users')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'users' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}>User Management</button>
-                <button onClick={() => setActiveTab('hackathons')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'hackathons' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}>Hackathons</button>
-                <button onClick={() => setActiveTab('analytics')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'analytics' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}>Reports & Analytics</button>
-            </nav>
-        </div>
-
-        {activeTab === 'users' && (
-          <div className="space-y-8">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
-              <h3 className="text-2xl font-bold text-white mb-4">User Search & Filters</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <input type="text" placeholder="Search by username or email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-4 py-2 bg-black/30 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500" />
-                <select value={selectedSkill} onChange={e => setSelectedSkill(e.target.value)} className="w-full px-4 py-2 bg-black/30 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500">
-                  <option value="">Filter by Skill</option>
-                  {allSkills.map(skill => <option key={skill} value={skill}>{skill}</option>)}
-                </select>
-                <select value={learningPathFilter} onChange={e => setLearningPathFilter(e.target.value)} className="w-full px-4 py-2 bg-black/30 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500">
-                    <option value="">Filter by Learning Path</option>
-                    <option value="yes">Generated</option>
-                    <option value="no">Not Generated</option>
-                </select>
-                 <div>
-                    <label className="text-sm text-gray-400">Score: {scoreFilter.min} - {scoreFilter.max}</label>
-                    <input type="range" min="0" max="10" value={scoreFilter.max} onChange={e => setScoreFilter({ ...scoreFilter, max: Number(e.target.value) })} className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"/>
-                </div>
-=======
         {/* Error Message */}
         {error && (
           <div className="bg-red-900/50 border border-red-500 text-red-300 p-4 rounded-lg">
@@ -628,30 +470,11 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 )}
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
               </div>
             </div>
 
             {/* Right Side (Analytics) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
-<<<<<<< HEAD
-              <h3 className="text-2xl font-bold text-white mb-4">User List & Status ({filteredUsers.length})</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-300">
-                  <thead className="text-xs text-gray-400 uppercase bg-black/20">
-                    <tr>
-                      <th className="px-6 py-3">Username</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3">Skills</th>
-                      <th className="px-6 py-3">Latest Score</th>
-                      <th className="px-6 py-3">Last Updated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map(user => <UserRow key={user.id} user={user} />)}
-                  </tbody>
-                </table>
-=======
               <h3 className="text-2xl font-bold text-white mb-4">Top Skills Analytics</h3>
               {allUsers.length > 0 ? (
                 <SkillAnalyticsChart users={allUsers} />
@@ -866,18 +689,10 @@ export default function AdminDashboard() {
                     <p className="mt-2 text-sm text-gray-500">Data will appear as users develop skills over time.</p>
                   </div>
                 )}
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
               </div>
             </div>
           </div>
         )}
-<<<<<<< HEAD
-
-        {activeTab === 'hackathons' && <HackathonManager hackathons={allHackathons} users={allUsers} />}
-        {activeTab === 'analytics' && <ReportsAndAnalytics users={allUsers} />}
-
-=======
->>>>>>> 6c363ac61ad6e26b8dd14d91600b5088d162d350
       </div>
     </div>
   );
