@@ -43,7 +43,7 @@ const moods = {
   fail: "https://i.giphy.com/media/26n6WywJyh39n1pBu/giphy.gif"
 };
 
-export default function CodeEditor() {
+export default function Assessments() {
   const { problemId } = useParams(); // Get problemId from URL
   const navigate = useNavigate();
   const editorRef = useRef(null);
@@ -52,13 +52,19 @@ export default function CodeEditor() {
   const [currentProblem, setCurrentProblem] = useState(null);
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState("");
-  const [output, setOutput] = useState("Select a problem to start coding.");
+  const [output, setOutput] = useState("Select a problem to start the assessment.");
   const [mood, setMood] = useState(moods.neutral);
   const [isRunning, setIsRunning] = useState(false);
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isProblemSolved, setIsProblemSolved] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  
+  // Assessment timer state
+  const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
+  const [isTimeUp, setIsTimeUp] = useState(false);
+  const [initialTime, setInitialTime] = useState(0); // Store initial time for reset
 
   // --- Fetch User, All Problems, and Specific Problem Data ---
   useEffect(() => {
@@ -98,13 +104,41 @@ export default function CodeEditor() {
 
   }, [navigate]);
 
+  // --- Initialize Timer Based on Difficulty ---
+  const initializeTimer = (difficulty) => {
+    let timeInMinutes = 10; // Default to Easy
+    switch (difficulty?.toLowerCase()) {
+      case 'easy':
+        timeInMinutes = 10;
+        break;
+      case 'medium':
+        timeInMinutes = 20;
+        break;
+      case 'hard':
+        timeInMinutes = 30;
+        break;
+      default:
+        timeInMinutes = 10;
+    }
+    return timeInMinutes * 60; // Convert to seconds
+  };
+  
+  // --- Reset Timer for New Assessment ---
+  const resetTimer = (difficulty) => {
+    const newInitialTime = initializeTimer(difficulty);
+    setInitialTime(newInitialTime);
+    setTimeLeft(newInitialTime);
+    setIsTimeUp(false);
+    // Don't reset isAssessmentStarted to keep the timer running
+  };
+
   // --- Fetch Problem and Last Submission Together ---
   useEffect(() => {
     if (!user || !problemId) return;
     let isMounted = true;
     const fetchProblemAndSubmission = async () => {
       setCurrentProblem(null);
-      setOutput("Loading problem...");
+      setOutput("Loading assessment...");
       // Fetch problem
       const { data: problemData, error: problemError } = await supabase
         .from("problems")
@@ -137,19 +171,83 @@ export default function CodeEditor() {
         } else {
           const defaultBoilerplate = problemData.boilerplate?.[language] || ``;
           setCode(defaultBoilerplate);
-          setOutput("Ready to code.");
+          setOutput("Ready to start the assessment.");
           setIsProblemSolved(false);
+        }
+        
+        // Initialize timer if assessment hasn't started yet
+        if (!isAssessmentStarted) {
+          const initialTime = initializeTimer(problemData.difficulty);
+          setInitialTime(initialTime);
+          setTimeLeft(initialTime);
+          setIsAssessmentStarted(true);
         }
       }
     };
     fetchProblemAndSubmission();
     return () => { isMounted = false; };
-  }, [user, problemId, language]);
-
-
+  }, [user, problemId, language, isAssessmentStarted]);
+  
+  // --- Timer Countdown Logic ---
+  useEffect(() => {
+    if (!isAssessmentStarted || isTimeUp) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          clearInterval(timer);
+          setIsTimeUp(true);
+          // Auto-submit when time is up
+          autoSubmitCode();
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [isAssessmentStarted, isTimeUp]);
+  
+  
+  // --- Auto Submit Code When Time is Up ---
+  const autoSubmitCode = async () => {
+    if (!user) {
+      setOutput("⚠ User not logged in.");
+      return;
+    }
+    if (!currentProblem) {
+      setOutput("⚠ No problem selected.");
+      return;
+    }
+    if (!code.trim()) {
+      setOutput("⚠ No solution to submit.");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.from("submissions").insert([
+        {
+          user_id: user.id,
+          problem_id: currentProblem.id,
+          code,
+          language,
+          test_cases: currentProblem.test_cases
+        }
+      ]);
+      
+      if (error) {
+        setOutput(`❌ Auto-submit failed: ${error.message}`);
+      } else {
+        setOutput("✅ Time's up! Your solution has been automatically submitted.");
+      }
+    } catch (err) {
+      setOutput(`❌ Auto-submit error: ${err.message}`);
+    }
+  };
+  
   const runCode = async () => {
     if (!currentProblem || !code.trim()) {
-      setOutput("âš ï¸ Please select a problem and write some code.");
+      setOutput("⚠ Please select a problem and write your solution.");
       return;
     }
     
@@ -291,7 +389,7 @@ export default function CodeEditor() {
       return;
     }
     if (!code.trim()) {
-      alert("⚠ Write some code before submitting.");
+      alert("⚠ Write your solution before submitting.");
       return;
     }
 
@@ -308,14 +406,14 @@ export default function CodeEditor() {
     if (error) {
       alert("❌ Error submitting: " + error.message);
     } else {
-      alert("✅ Submission saved successfully!");
+      alert("✅ Assessment submitted successfully!");
     }
   };
 
 
   const handleProblemSelect = (selectedProblemId) => {
     if (selectedProblemId) {
-        navigate(`/editor/${selectedProblemId}`);
+        navigate(`/assessments/${selectedProblemId}`);
     }
   };
   
@@ -886,7 +984,7 @@ export default function CodeEditor() {
           {/* Removed 'Back to Dashboard' button as requested */}
 
           <div className="mb-4">
-              <label htmlFor="problem-selector" className="block mb-2 text-sm font-medium text-gray-300">Select a Problem</label>
+              <label htmlFor="problem-selector" className="block mb-2 text-sm font-medium text-gray-300">Select an Assessment</label>
               <div className="relative">
                 <select
                   id="problem-selector"
@@ -894,7 +992,7 @@ export default function CodeEditor() {
                   onChange={(e) => handleProblemSelect(e.target.value)}
                   className="w-full p-3 pr-10 glass-panel-input backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl appearance-none"
                 >
-                  <option value="" disabled>Choose a problem</option>
+                  <option value="" disabled>Choose an assessment</option>
                   {allProblems.map((p) => (
                     <option key={p.id} value={p.id} className="bg-gray-900 text-white">
                       {p.title}
@@ -935,14 +1033,14 @@ export default function CodeEditor() {
                 </div>
               </>
             ) : (
-               <p>{problemId ? "Loading problem..." : "Please select a problem from the dropdown."}</p>
+               <p>{problemId ? "Loading assessment..." : "Please select an assessment from the dropdown."}</p>
             )}
           </div>
         </div>
 
         {/* Main */}
         <div className="lg:w-2/3 flex flex-col">
-          <div className="glass-panel p-4 mb-4 flex gap-2 items-center">
+          <div className="glass-panel p-4 mb-4 flex flex-wrap gap-2 items-center">
             <div className="relative">
               <select
                 value={language}
@@ -963,18 +1061,38 @@ export default function CodeEditor() {
                 </svg>
               </div>
             </div>
+            
+            {/* Difficulty and Timer Display */}
+            {currentProblem && (
+              <div className="flex gap-2 items-center">
+                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-blue-500/20 text-blue-300">
+                  {currentProblem.difficulty || "Easy"}
+                </span>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${isTimeUp ? "bg-red-500/20 text-red-300" : "bg-green-500/20 text-green-300"}`}>
+                  {isTimeUp ? "Time's Up!" : `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
+                </span>
+                <button
+                  onClick={() => resetTimer(currentProblem.difficulty)}
+                  className="px-3 py-1 rounded-full text-sm font-semibold bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
+                >
+                  Reset Assessment
+                </button>
+              </div>
+            )}
+            
             <button
               onClick={runCode}
-              disabled={isRunning}
-              className={`px-4 py-2 rounded-lg font-bold ${isRunning ? "bg-gray-500" : "bg-green-600 hover:bg-green-700"}`}
+              disabled={isRunning || isTimeUp}
+              className={`px-4 py-2 rounded-lg font-bold ${isRunning || isTimeUp ? "bg-gray-500" : "bg-green-600 hover:bg-green-700"}`}
             >
-              {isRunning ? "Running..." : "Run Code"}
+              {isRunning ? "Running..." : "Run Solution"}
             </button>
             <button
               onClick={submitCode}
-              className="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700"
+              disabled={isTimeUp}
+              className={`px-4 py-2 rounded-lg font-bold ${isTimeUp ? "bg-gray-500" : "bg-blue-600 hover:bg-blue-700"}`}
             >
-              Submit
+              Submit Assessment
             </button>
           </div>
 
@@ -986,13 +1104,14 @@ export default function CodeEditor() {
               value={code}
               onChange={(val) => setCode(val || "")}
               onMount={handleEditorDidMount}
-              options={{ 
-                fontSize: 16, 
-                minimap: { enabled: false }, 
+              options={{
+                fontSize: 16,
+                minimap: { enabled: false },
                 wordWrap: "on",
                 suggestOnTriggerCharacters: true,
                 quickSuggestions: true,
-                snippetSuggestions: "inline"
+                snippetSuggestions: "inline",
+                readOnly: isTimeUp
               }}
             />
           </div>
