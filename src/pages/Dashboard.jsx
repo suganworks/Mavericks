@@ -748,7 +748,7 @@ export default function Dashboard() {
                                 {/* XP Tile */}
                                 <motion.div 
                                     className="bg-gradient-to-br from-purple-900/40 to-purple-600/20 backdrop-blur-lg rounded-xl p-4 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 group"
-                                    whileHover={{ y: -5 }}
+                                    whilehover={{ y: -5 }}
                                     transition={{ type: "spring", stiffness: 300 }}
                                 >
                                     <div className="flex items-center justify-between mb-2">
@@ -770,7 +770,7 @@ export default function Dashboard() {
                                 {/* Level Tile */}
                                 <motion.div 
                                     className="bg-gradient-to-br from-blue-900/40 to-blue-600/20 backdrop-blur-lg rounded-xl p-4 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 group"
-                                    whileHover={{ y: -5 }}
+                                    whilehover={{ y: -5 }}
                                     transition={{ type: "spring", stiffness: 300 }}
                                 >
                                     <div className="flex items-center justify-between mb-2">
@@ -792,7 +792,7 @@ export default function Dashboard() {
                                 {/* Badge Tile */}
                                 <motion.div 
                                     className="bg-gradient-to-br from-yellow-900/40 to-yellow-600/20 backdrop-blur-lg rounded-xl p-4 border border-yellow-500/30 hover:border-yellow-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/10 group"
-                                    whileHover={{ y: -5 }}
+                                    whilehover={{ y: -5 }}
                                     transition={{ type: "spring", stiffness: 300 }}
                                 >
                                     <div className="flex items-center justify-between mb-2">
@@ -814,7 +814,7 @@ export default function Dashboard() {
                                 {/* Preferred Mode Tile */}
                                 <motion.div 
                                     className="bg-gradient-to-br from-green-900/40 to-green-600/20 backdrop-blur-lg rounded-xl p-4 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10 group"
-                                    whileHover={{ y: -5 }}
+                                    whilehover={{ y: -5 }}
                                     transition={{ type: "spring", stiffness: 300 }}
                                     onClick={togglePreferredMode}
                                 >

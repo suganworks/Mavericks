@@ -42,7 +42,7 @@ const Navbar = () => (
                     <button
                         href="#"
                         className="px-6 py-3 rounded-[1rem] bg-white/10 backdrop-blur-2xl border border-white/20 text-white hover:bg-white/20 transition-all duration-300 text-sm font-bold"
-                        whileHover={{ scale: 1.05 }}
+                        whilehover={{ scale: 1.05 }}
                         onClick={() => window.location.href = '/login'}
                     >
                         Login
@@ -50,7 +50,7 @@ const Navbar = () => (
                     <button
                         href="#"
                         className="px-6 py-3 rounded-[1rem] bg-cyan-400 text-black hover:bg-cyan-500 transition-all duration-300 text-sm font-bold"
-                        whileHover={{ scale: 1.05 }}
+                        whilehover={{ scale: 1.05 }}
                         onClick={() => window.location.href = '/register'}
                     >
                         Register
