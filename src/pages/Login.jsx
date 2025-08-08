@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useTilt } from "../hooks/useTilt";
 import { FaGoogle, FaGithub } from "react-icons/fa";
+import { checkIfAdmin } from "../auth";
 
 const tiltStyle = `
   .tilt-card {
@@ -25,19 +26,36 @@ export default function Login() {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setErrorMsg(error.message);
-    } else {
-      navigate("/dashboard");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        // Check if the user is an admin
+        const isAdmin = await checkIfAdmin(data.user.id);
+        
+        // Redirect based on admin status
+        if (isAdmin) {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      }
+    } catch (err) {
+      setErrorMsg("An error occurred during login. Please try again.");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     setErrorMsg("");
     
+    // For OAuth providers, we can't immediately check admin status
+    // because the redirect happens before we can check
+    // The user will be redirected to dashboard and then we'll check admin status there
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -55,6 +73,9 @@ export default function Login() {
     setLoading(true);
     setErrorMsg("");
     
+    // For OAuth providers, we can't immediately check admin status
+    // because the redirect happens before we can check
+    // The user will be redirected to dashboard and then we'll check admin status there
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {

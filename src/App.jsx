@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // Import the background component first
 import ParticleBackground from "./components/ParticleBackground";
 import PageWithNavbar from "./components/PageWithNavbar";
+import AdminPageWithNavbar from "./components/AdminPageWithNavbar";
 
 // Import all page components from your 'src/pages' directory
 import LandingPage from "./pages/LandingPage";
@@ -27,6 +28,7 @@ import HackathonAdminScores from "./pages/HackathonAdminScores";
 
 // Import the Admin Dashboard and the security component that protects it
 import AdminDashboard from "./pages/AdminDashboard";
+import Admin from "./pages/Admin";
 import AdminRoute from "./components/AdminRoute";
 
 export default function App() {
@@ -70,8 +72,9 @@ export default function App() {
           <Route path="/assessments/:id/results" element={<PageWithNavbar><AssessmentResults /></PageWithNavbar>} />
           <Route path="/leaderboard" element={<PageWithNavbar><Leaderboard /></PageWithNavbar>} />
           <Route path="/ai-resume" element={<PageWithNavbar><AIResumeConsolidator /></PageWithNavbar>} />
-          {/* Admin route */}
-          <Route path="/admin/dashboard" element={<AdminRoute><PageWithNavbar><AdminDashboard /></PageWithNavbar></AdminRoute>} />
+          {/* Admin routes */}
+          <Route path="/admin" element={<AdminRoute><AdminPageWithNavbar><Admin /></AdminPageWithNavbar></AdminRoute>} />
+          <Route path="/admin/dashboard" element={<AdminRoute><AdminPageWithNavbar><AdminDashboard /></AdminPageWithNavbar></AdminRoute>} />
         </Routes>
       </div>
     </Router>

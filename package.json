@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "add-admin": "node scripts/add_admin.js",
     "db:setup": "node scripts/setup-database.js",
     "db:seed": "node scripts/seed-problems.js",
     "db:insert-problems": "node scripts/insert-problems.js"

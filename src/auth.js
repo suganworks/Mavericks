@@ -32,6 +32,21 @@ export async function signIn(email, password) {
   return data;
 }
 
+export async function checkIfAdmin(userId) {
+  const { data, error } = await supabase
+    .from('admin')
+    .select('id')
+    .eq('id', userId)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') { // PGRST116 is the error code for no rows returned
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+  
+  return !!data; // Returns true if admin record exists, false otherwise
+}
+
 export async function signOut() {
   await supabase.auth.signOut();
 }
