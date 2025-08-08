@@ -125,19 +125,19 @@ export default function Register() {
         className="absolute inset-0 bg-cover bg-center z-0"
         style={{
           backgroundImage:
-            "url('https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif')",
+            "url('https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2VrNTJ5MXVibGVzamZudWR4MXc1ZHQxejJrenA2YzNxam9yanZmOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OK5LK5zLFfdm/giphy.gif')",
         }}
       ></div>
       <div className="absolute inset-0 bg-black/50 z-0"></div>
 
-      {/* Liquid Glass Card with ref and class */}
-      <form
-        ref={cardRef}
-        onSubmit={handleRegister}
-        className="tilt-card relative z-10 w-[90%] sm:w-[420px] p-8 rounded-[2rem]
-                   backdrop-blur-3xl bg-white/10 border border-white/30
-                   shadow-[0_0_30px_rgba(255,0,255,0.6),inset_0_0_30px_rgba(255,255,255,0.05)]"
-      >
+             {/* Liquid Glass Card with ref and class */}
+       <form
+         ref={cardRef}
+         onSubmit={handleRegister}
+         className="tilt-card relative z-10 w-[90%] sm:w-[420px] p-8 rounded-[2rem]
+                    backdrop-blur-3xl bg-white/10 border border-white/30
+                    shadow-lg"
+       >
         <h2 className="text-4xl font-semibold text-white mb-6 text-center drop-shadow-md">
           Create Account
         </h2>
@@ -173,13 +173,13 @@ export default function Register() {
           required
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 rounded-2xl font-bold text-white
-                     bg-gradient-to-r from-pink-500 to-purple-500 hover:from-purple-500 hover:to-pink-500
-                     shadow-[0_0_20px_#ff00ff] transition-all duration-300 disabled:opacity-50"
-        >
+                 <button
+           type="submit"
+           disabled={loading}
+           className="w-full py-3 rounded-2xl font-bold text-white
+                      bg-gradient-to-r from-pink-500 to-purple-500 hover:from-purple-500 hover:to-pink-500
+                      transition-all duration-300 disabled:opacity-50"
+         >
           {loading ? "Registering..." : "Register"}
         </button>
 
