@@ -20,11 +20,12 @@ export default function Menu() {
       <div className="relative z-10 w-[90%] md:w-[600px] p-8 rounded-[2rem] bg-white/10 border border-white/20 backdrop-blur-2xl shadow-xl">
         <h1 className="text-3xl font-bold text-center mb-8">📜 Mavericks Menu</h1>
         <div className="grid grid-cols-1 gap-4">
+          {/* Code Editor option removed */}
           <button
             className="px-6 py-4 rounded-xl bg-white/5 hover:bg-cyan-500/20 transition text-left"
-            onClick={() => navigate('/code-editor')}
+            onClick={() => navigate('/assessments')}
           >
-            💻 Code Editor
+            📝 Assessments
           </button>
           <button
             className="px-6 py-4 rounded-xl bg-white/5 hover:bg-cyan-500/20 transition text-left"

@@ -11,11 +11,20 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./pages/Menu";
-import CodeEditor from "./pages/code-editor";
 import Hackathon from "./pages/Hackathon";
 import AIConceptExplainer from "./pages/AIConceptExplainer";
 import Leaderboard from "./pages/Leaderboard";
 import AIResumeConsolidator from "./pages/AIResumeConsolidator";
+import Assessments from "./pages/assessments";
+import AssessmentFlow from "./pages/assessment-flow";
+import MCQAssessment from "./pages/mcq-assessment";
+import CodeAssessment from "./pages/code-assessment";
+import AssessmentResults from "./pages/assessment-results";
+import HackathonDashboard from "./pages/HackathonDashboard";
+import ChallengeWorkspace from "./pages/ChallengeWorkspace";
+import HackathonLeaderboard from "./pages/HackathonLeaderboard";
+import HackathonScoreReport from "./pages/HackathonScoreReport";
+import HackathonAdminScores from "./pages/HackathonAdminScores";
 
 // Import the Admin Dashboard and the security component that protects it
 import AdminDashboard from "./pages/AdminDashboard";
@@ -46,10 +55,21 @@ export default function App() {
           {/* All other routes with navbar */}
           <Route path="/dashboard" element={<PageWithNavbar><Dashboard /></PageWithNavbar>} />
           <Route path="/menu" element={<PageWithNavbar><Menu /></PageWithNavbar>} />
-          <Route path="/code-editor" element={<PageWithNavbar><CodeEditor /></PageWithNavbar>} />
-          <Route path="/editor/:problemId" element={<PageWithNavbar><CodeEditor /></PageWithNavbar>} />
+          <Route path="/code-editor" element={<PageWithNavbar><CodeAssessment /></PageWithNavbar>} />
+          <Route path="/editor/:problemId" element={<PageWithNavbar><CodeAssessment /></PageWithNavbar>} />
           <Route path="/hackathon" element={<PageWithNavbar><Hackathon /></PageWithNavbar>} />
+          <Route path="/hackathons/:id/dashboard" element={<PageWithNavbar><HackathonDashboard /></PageWithNavbar>} />
+          <Route path="/challenges/:challengeId/workspace" element={<PageWithNavbar><ChallengeWorkspace /></PageWithNavbar>} />
+          <Route path="/hackathons/:hackathonId/leaderboard" element={<PageWithNavbar><HackathonLeaderboard /></PageWithNavbar>} />
+          <Route path="/hackathons/:hackathonId/score-report" element={<PageWithNavbar><HackathonScoreReport /></PageWithNavbar>} />
+          <Route path="/hackathons/:hackathonId/admin/scores" element={<AdminRoute><PageWithNavbar><HackathonAdminScores /></PageWithNavbar></AdminRoute>} />
           <Route path="/ai-explainer" element={<PageWithNavbar><AIConceptExplainer /></PageWithNavbar>} />
+          <Route path="/assessments" element={<PageWithNavbar><Assessments /></PageWithNavbar>} />
+          <Route path="/assessments/:id/mcq" element={<PageWithNavbar><MCQAssessment /></PageWithNavbar>} />
+          <Route path="/assessments/:problemId" element={<PageWithNavbar><AssessmentFlow /></PageWithNavbar>} />
+          <Route path="/assessments/:id/code" element={<PageWithNavbar><CodeAssessment /></PageWithNavbar>} />
+          <Route path="/assessments/:id/result" element={<PageWithNavbar><AssessmentResults /></PageWithNavbar>} />
+          <Route path="/assessments/:id/results" element={<PageWithNavbar><AssessmentResults /></PageWithNavbar>} />
           <Route path="/leaderboard" element={<PageWithNavbar><Leaderboard /></PageWithNavbar>} />
           <Route path="/ai-resume" element={<PageWithNavbar><AIResumeConsolidator /></PageWithNavbar>} />
           {/* Admin routes */}
