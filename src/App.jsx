@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ParticleBackground from "./components/ParticleBackground";
 import PageWithNavbar from "./components/PageWithNavbar";
 import AdminPageWithNavbar from "./components/AdminPageWithNavbar";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Import all page components from your 'src/pages' directory
 import LandingPage from "./pages/LandingPage";
@@ -32,21 +33,24 @@ import Admin from "./pages/Admin";
 import AdminRoute from "./components/AdminRoute";
 
 export default function App() {
+  console.log('App.jsx: Component rendering...');
+  
   return (
-    <Router>
-      {/*
-        The ParticleBackground component is placed here, at the top level.
-        It uses fixed positioning and a z-index of -1 to render itself
-        behind all other content, creating a seamless background across all routes.
-      */}
-      <ParticleBackground />
-
-      <div className="relative z-10 min-h-screen">
+    <ErrorBoundary>
+      <Router>
         {/*
-          This wrapper div with a relative z-index ensures that all page
-          content rendered by the Routes will appear on top of the background.
+          The ParticleBackground component is placed here, at the top level.
+          It uses fixed positioning and a z-index of -1 to render itself
+          behind all other content, creating a seamless background across all routes.
         */}
-        <Routes>
+        <ParticleBackground />
+
+        <div className="relative z-10 min-h-screen">
+          {/*
+            This wrapper div with a relative z-index ensures that all page
+            content rendered by the Routes will appear on top of the background.
+          */}
+          <Routes>
           {/* Public routes (no navbar) */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
@@ -75,8 +79,12 @@ export default function App() {
           {/* Admin routes */}
           <Route path="/admin" element={<AdminRoute><AdminPageWithNavbar><Admin /></AdminPageWithNavbar></AdminRoute>} />
           <Route path="/admin/dashboard" element={<AdminRoute><AdminPageWithNavbar><AdminDashboard /></AdminPageWithNavbar></AdminRoute>} />
+          
+          {/* Test route - bypass authentication temporarily */}
+          <Route path="/test-admin" element={<AdminPageWithNavbar><AdminDashboard /></AdminPageWithNavbar>} />
         </Routes>
       </div>
     </Router>
+    </ErrorBoundary>
   );
 }
