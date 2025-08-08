@@ -180,21 +180,25 @@ export default function AdminDashboard() {
     const fetchHackathons = async () => {
       try {
         const { data, error } = await supabase
-          .from('hackathon_questions')
-          .select('*');
+          .from('hackathons')
+          .select(`
+            *,
+            hackathon_registrations(count),
+            hackathon_submissions(count)
+          `);
           
         if (error) throw error;
         
         // Transform the data to match the expected structure
         const transformedHackathons = data.map(hackathon => ({
-          id: hackathon.problem_id,
-          title: hackathon.problem_name,
-          description: hackathon.problem_description,
-          start_date: hackathon.created_at,
-          end_date: hackathon.updated_at,
-          status: hackathon.status || 'Active',
-          participants: hackathon.participants_count || 0,
-          submissions: hackathon.submissions_count || 0
+          id: hackathon.id,
+          title: hackathon.title,
+          description: hackathon.description,
+          start_date: hackathon.start_at,
+          end_date: hackathon.end_at,
+          status: hackathon.status || 'upcoming',
+          participants: hackathon.hackathon_registrations?.[0]?.count || 0,
+          submissions: hackathon.hackathon_submissions?.[0]?.count || 0
         }));
         
         setHackathons(transformedHackathons);

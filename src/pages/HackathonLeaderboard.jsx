@@ -41,8 +41,7 @@ export default function HackathonLeaderboard() {
             user_id,
             users:user_id(email),
             hackathon_registrations!inner(
-              team_name,
-              members
+              registrant_name
             )
           `)
           .eq("hackathon_id", hackathonId)
@@ -55,8 +54,7 @@ export default function HackathonLeaderboard() {
           rank: index + 1,
           userId: participant.user_id,
           email: participant.users?.email || "Unknown",
-          teamName: participant.hackathon_registrations?.team_name || "Solo",
-          members: participant.hackathon_registrations?.members || "",
+          participantName: participant.hackathon_registrations?.registrant_name || "Unknown",
           totalScore: participant.total_score || 0,
         }));
 
@@ -138,8 +136,8 @@ export default function HackathonLeaderboard() {
                   <div className="text-sm text-gray-400">Total Score</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-white">{userScore.teamName}</div>
-                  <div className="text-sm text-gray-400">Team</div>
+                  <div className="text-lg font-semibold text-white">{userScore.participantName}</div>
+                  <div className="text-sm text-gray-400">Participant</div>
                 </div>
               </div>
               <button
@@ -188,16 +186,11 @@ export default function HackathonLeaderboard() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-white">
-                        {participant.teamName}
+                        {participant.participantName}
                       </h3>
                       <p className="text-sm text-gray-400">
                         {participant.email}
                       </p>
-                      {participant.members && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Members: {participant.members}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <div className="text-right">

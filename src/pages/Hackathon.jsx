@@ -27,41 +27,37 @@ export default function Hackathon() {
   // Registration form fields
   const [registrantName, setRegistrantName] = useState("");
   const [registrantEmail, setRegistrantEmail] = useState("");
-  const [teamName, setTeamName] = useState("");
-  const [members, setMembers] = useState("");
 
-  // Sample hackathons. In a real app, fetch from DB.
-  const hackathons = useMemo(
-    () => [
-      {
-        id: 1,
-        title: "Mavericks Spring Hackathon",
-        description:
-          "Build innovative apps in 24 hours. Themes: AI Assistants, DevTools, and Education.",
-        start_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // in 2 days
-        end_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(), // +1 day
-        location: "Online",
-      },
-      {
-        id: 2,
-        title: "Edge AI Mini-Hack",
-        description:
-          "4-hour sprint focusing on edge inference and tinyML challenges.",
-        start_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // started 3h ago
-        end_at: new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString(), // ends in 1h
-        location: "Hybrid",
-      },
-      {
-        id: 3,
-        title: "Winter DevFest",
-        description: "A weekend-long festival of coding, talks, and workshops.",
-        start_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-        end_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
-        location: "Bangalore, IN",
-      },
-    ],
-    []
-  );
+  // Hackathon data state
+  const [hackathons, setHackathons] = useState([]);
+  const [loadingHackathons, setLoadingHackathons] = useState(true);
+  const [hackathonError, setHackathonError] = useState("");
+
+  // Fetch hackathons from database
+  useEffect(() => {
+    const fetchHackathons = async () => {
+      try {
+        setLoadingHackathons(true);
+        setHackathonError("");
+        
+        const { data, error } = await supabase
+          .from("hackathons")
+          .select("*")
+          .order("start_at", { ascending: true });
+
+        if (error) throw error;
+        
+        setHackathons(data || []);
+      } catch (err) {
+        console.error("Error fetching hackathons:", err);
+        setHackathonError("Failed to load hackathons. Please try again later.");
+      } finally {
+        setLoadingHackathons(false);
+      }
+    };
+
+    fetchHackathons();
+  }, []);
 
   const now = Date.now();
   const withStatus = useMemo(() => {
@@ -114,8 +110,6 @@ export default function Hackathon() {
     setSelectedHackathon(hackathon);
     setRegistrantName("");
     setRegistrantEmail("");
-    setTeamName("");
-    setMembers("");
     setSubmitMessage("");
     setShowForm(true);
   };
@@ -124,8 +118,8 @@ export default function Hackathon() {
     e.preventDefault();
     if (!selectedHackathon || !user) return;
 
-    if (!teamName.trim()) {
-      setSubmitMessage("Please provide a Team Name.");
+    if (!registrantName.trim()) {
+      setSubmitMessage("Please provide your name.");
       return;
     }
 
@@ -135,8 +129,6 @@ export default function Hackathon() {
       const { error } = await supabase.from("hackathon_registrations").insert({
         user_id: user.id,
         hackathon_id: selectedHackathon.id,
-        team_name: teamName.trim(),
-        members: members.trim(),
         registrant_name: registrantName.trim(),
         registrant_email: registrantEmail.trim(),
       });
@@ -146,7 +138,7 @@ export default function Hackathon() {
         if (error.code === '23505') {
           setSubmitMessage("❌ You are already registered for this hackathon.");
         } else {
-          setSubmitMessage("❌ Registration failed. Please try again later.");
+          setSubmitMessage(`❌ Registration failed: ${error.message || 'Please try again later.'}`);
         }
       } else {
         setSubmitMessage("✅ Registered successfully! Redirecting to dashboard...");
@@ -210,6 +202,34 @@ export default function Hackathon() {
     </div>
   );
 
+  if (loadingHackathons) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading hackathons...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hackathonError) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">❌</div>
+          <p className="text-red-400 mb-4">{hackathonError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Hero */}
@@ -265,51 +285,29 @@ export default function Hackathon() {
             </div>
 
             <form onSubmit={submitRegistration} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-300 mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={registrantName}
-                    onChange={(e) => setRegistrantName(e.target.value)}
-                    placeholder="Your full name"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-300 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={registrantEmail}
-                    onChange={(e) => setRegistrantEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-300 mb-1">Team Name</label>
-                <input
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g., Mavericks Builders"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-300 mb-1">Members</label>
-                <input
-                  type="text"
-                  value={members}
-                  onChange={(e) => setMembers(e.target.value)}
-                  placeholder="Comma-separated names"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm text-gray-300 mb-1">Name</label>
+                   <input
+                     type="text"
+                     value={registrantName}
+                     onChange={(e) => setRegistrantName(e.target.value)}
+                     placeholder="Your full name"
+                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                     required
+                   />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-300 mb-1">Email</label>
+                   <input
+                     type="email"
+                     value={registrantEmail}
+                     onChange={(e) => setRegistrantEmail(e.target.value)}
+                     placeholder="you@example.com"
+                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                   />
+                 </div>
+               </div>
 
               {submitMessage && (
                 <div className="text-sm text-gray-200 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2">

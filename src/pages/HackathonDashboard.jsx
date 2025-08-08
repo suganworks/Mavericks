@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 const tracks = [
+  { key: "all", label: "All Challenges" },
   { key: "ai-ml", label: "AI / ML" },
   { key: "web", label: "Web Dev" },
   { key: "iot", label: "IoT" },
@@ -17,7 +18,7 @@ export default function HackathonDashboard() {
   const [isRegistered, setIsRegistered] = useState(null); // null=loading, false/true
   const [loadingChallenges, setLoadingChallenges] = useState(false);
   const [challenges, setChallenges] = useState([]);
-  const [currentTrack, setCurrentTrack] = useState(tracks[0].key);
+  const [currentTrack, setCurrentTrack] = useState("all");
   const [error, setError] = useState("");
 
   // Auth
@@ -66,11 +67,28 @@ export default function HackathonDashboard() {
       try {
         const { data, error } = await supabase
           .from("hackathon_challenges")
-          .select("id,title,description,difficulty,track")
+          .select("id,title,description,type,difficulty,time_limit,max_score")
           .eq("hackathon_id", hackathonId);
 
         if (error) throw error;
-        setChallenges(Array.isArray(data) ? data : []);
+        
+        // Add track information based on challenge type and title
+        const challengesWithTracks = data.map(challenge => {
+          let track = 'web'; // default
+          if (challenge.type === 'mcq') {
+            track = 'ai-ml';
+          } else if (challenge.title.toLowerCase().includes('api') || challenge.title.toLowerCase().includes('full-stack')) {
+            track = 'web';
+          } else if (challenge.title.toLowerCase().includes('responsive') || challenge.title.toLowerCase().includes('frontend')) {
+            track = 'web';
+          }
+          return {
+            ...challenge,
+            track: track
+          };
+        });
+        
+        setChallenges(challengesWithTracks || []);
       } catch (err) {
         setError(err.message);
         setChallenges([]);
@@ -82,6 +100,9 @@ export default function HackathonDashboard() {
   }, [hackathonId]);
 
   const filteredChallenges = useMemo(() => {
+    if (currentTrack === "all") {
+      return challenges;
+    }
     return challenges.filter((c) => (c.track || "").toLowerCase() === currentTrack);
   }, [challenges, currentTrack]);
 
@@ -149,14 +170,15 @@ export default function HackathonDashboard() {
               </button>
             </div>
             <div className="space-y-6 text-gray-300">
-              <div>
-                <h3 className="font-semibold text-white mb-2">Rules</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Teams of up to 4 participants.</li>
-                  <li>All work must be created during the event.</li>
-                  <li>Use of open-source libraries is allowed with attribution.</li>
-                </ul>
-              </div>
+                             <div>
+                 <h3 className="font-semibold text-white mb-2">Rules</h3>
+                 <ul className="list-disc list-inside space-y-1">
+                   <li>Individual participation only.</li>
+                   <li>All work must be created during the event.</li>
+                   <li>Use of open-source libraries is allowed with attribution.</li>
+                   <li>Complete challenges to earn points and climb the leaderboard.</li>
+                 </ul>
+               </div>
               <div>
                 <h3 className="font-semibold text-white mb-2">Judging Criteria</h3>
                 <ul className="list-disc list-inside space-y-1">

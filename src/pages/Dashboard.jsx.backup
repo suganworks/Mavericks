@@ -777,7 +777,7 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="relative h-screen bg-black text-white p-4 sm:p-6 font-sans overflow-x-hidden overflow-y-auto">
+        <div className="relative min-h-screen bg-black text-white p-4 sm:p-6 font-sans overflow-x-hidden">
             {/* Animated Blob Background */}
             <motion.div
                 className="absolute -top-40 -left-40 w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full bg-purple-600 mix-blend-multiply filter blur-3xl opacity-40"
@@ -807,7 +807,7 @@ export default function Dashboard() {
                 </header>
 
                 {/* Main Content */}
-                <main className="max-h-full overflow-y-auto">
+                <main>
                     {/* Error Display */}
                     {error && (
                         <motion.div 
@@ -1221,7 +1221,7 @@ export default function Dashboard() {
             {/* Problems Carousel */}
             <div 
                 ref={problemsContainerRef} 
-                className="flex overflow-x-hidden overflow-y-hidden pb-6 gap-4 scroll-smooth"
+                className="flex overflow-x-hidden pb-6 gap-4 scroll-smooth"
             >
                 <AnimatePresence>
                     {isFetchingProblems || isFetchingSubmissions ? (
@@ -1316,5 +1316,6 @@ export default function Dashboard() {
                 </main>
             </div>
         </div>
+    </div>
     );
 }
