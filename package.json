@@ -8,13 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-<<<<<<< HEAD
-    "add-admin": "node scripts/add_admin.js"
-=======
+    "add-admin": "node scripts/add_admin.js",
     "db:setup": "node scripts/setup-database.js",
     "db:seed": "node scripts/seed-problems.js",
     "db:insert-problems": "node scripts/insert-problems.js"
->>>>>>> 8ba11aefcc1941d79174d828089771c77d989f46
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
