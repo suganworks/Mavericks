@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:setup": "node scripts/setup-database.js",
+    "db:seed": "node scripts/seed-problems.js",
+    "db:insert-problems": "node scripts/insert-problems.js"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
@@ -28,6 +31,7 @@
     "framer-motion": "^12.23.12",
     "gsap": "^3.13.0",
     "lucide-react": "^0.536.0",
+    "marked": "^16.1.2",
     "monaco-editor": "^0.52.2",
     "ogl": "^1.0.11",
     "pdfjs-dist": "^5.4.54",

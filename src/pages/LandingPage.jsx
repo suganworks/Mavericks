@@ -39,22 +39,22 @@ const Navbar = () => (
                     <span className="text-white font-black text-2xl tracking-wider">MAVERICKS</span>
                 </div>
                 <div className="hidden md:flex items-center space-x-4">
-                    <button
+                    <motion.button
                         href="#"
                         className="px-6 py-3 rounded-[1rem] bg-white/10 backdrop-blur-2xl border border-white/20 text-white hover:bg-white/20 transition-all duration-300 text-sm font-bold"
                         whileHover={{ scale: 1.05 }}
                         onClick={() => window.location.href = '/login'}
                     >
                         Login
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                         href="#"
                         className="px-6 py-3 rounded-[1rem] bg-cyan-400 text-black hover:bg-cyan-500 transition-all duration-300 text-sm font-bold"
                         whileHover={{ scale: 1.05 }}
                         onClick={() => window.location.href = '/register'}
                     >
                         Register
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         </div>

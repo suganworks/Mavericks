@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import MonacoEditor from "@monaco-editor/react";
-import * as monaco from "monaco-editor";
-import { loader } from "@monaco-editor/react";
-import keywordSuggestions from "../../data/KeywordSuggestions";
+import { motion } from "framer-motion";
+import { moods } from "../../data/moods";
 
 // --- Language Icons ---
 const LanguageIcons = {
@@ -32,86 +30,355 @@ const LanguageIcons = {
   )
 };
 
-// --- Config ---
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY || "";
+// Assessment topics with their descriptions
+const assessmentTopics = [
+  {
+    id: "arrays",
+    title: "Arrays",
+    description: "Master array manipulation, traversal, and common algorithms.",
+    icon: "📊"
+  },
+  {
+    id: "strings",
+    title: "Strings",
+    description: "Tackle string manipulation, pattern matching, and text processing.",
+    icon: "📝"
+  },
+  {
+    id: "recursion",
+    title: "Recursion",
+    description: "Solve problems using recursive techniques and backtracking.",
+    icon: "🔄"
+  },
+  {
+    id: "data-structures",
+    title: "Data Structures",
+    description: "Implement and use stacks, queues, linked lists, trees, and graphs.",
+    icon: "🏗️"
+  },
+  {
+    id: "algorithms",
+    title: "Algorithms",
+    description: "Apply sorting, searching, and optimization algorithms.",
+    icon: "⚙️"
+  },
+  {
+    id: "dynamic-programming",
+    title: "Dynamic Programming",
+    description: "Solve complex problems by breaking them down into simpler subproblems.",
+    icon: "🧩"
+  }
+];
 
-// --- Mood GIFs ---
-const moods = {
-  neutral: "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-  running: "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExaXNqZ3Y0Z2RkZ2w5a2ZqY2ZpZ3J5b3R4c3B6c3h6eXJtY3h5eHh5eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l4KhVp1b2e4M2o2mQ/giphy.gif",
-  success: "https://i.giphy.com/media/111ebonMs90YLu/giphy.gif",
-  fail: "https://i.giphy.com/media/26n6WywJyh39n1pBu/giphy.gif"
+// Weekly assessment data
+const weeklyAssessment = {
+  id: "weekly-challenge",
+  title: "Weekly Challenge",
+  description: "This week's challenge focuses on graph algorithms and network flow problems.",
+  difficulty: "Medium",
+  deadline: "Sunday, 11:59 PM",
+  icon: "📆"
+};
+
+// Daily assessment data (changes daily)
+const getDailyAssessment = () => {
+  const today = new Date();
+  const day = today.getDay();
+  
+  const dailyTopics = [
+    "Arrays and Strings",
+    "Linked Lists",
+    "Stacks and Queues",
+    "Trees and Graphs",
+    "Sorting and Searching",
+    "Dynamic Programming",
+    "System Design"
+  ];
+  
+  return {
+    id: "daily-quiz",
+    title: "Daily Coding Quiz",
+    description: `Today's quiz focuses on ${dailyTopics[day]}. Complete it to earn bonus points!`,
+    difficulty: "Easy",
+    icon: "📅"
+  };
 };
 
 export default function Assessments() {
-  const { problemId } = useParams(); // Get problemId from URL
   const navigate = useNavigate();
-  const editorRef = useRef(null);
-
-  const [allProblems, setAllProblems] = useState([]);
-  const [currentProblem, setCurrentProblem] = useState(null);
-  const [language, setLanguage] = useState("python");
-  const [code, setCode] = useState("");
-  const [output, setOutput] = useState("Select a problem to start the assessment.");
-  const [mood, setMood] = useState(moods.neutral);
-  const [isRunning, setIsRunning] = useState(false);
+  const location = useLocation();
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [isProblemSolved, setIsProblemSolved] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
+  const [dailyAssessment, setDailyAssessment] = useState(null);
+  const [completedAssessments, setCompletedAssessments] = useState([]);
+  const [currentMood, setCurrentMood] = useState("Galaxy Night"); // Default mood
+  const [successMessage, setSuccessMessage] = useState(null);
   
-  // Assessment timer state
-  const [timeLeft, setTimeLeft] = useState(0); // in seconds
-  const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
-  const [isTimeUp, setIsTimeUp] = useState(false);
-  const [initialTime, setInitialTime] = useState(0); // Store initial time for reset
+  // Function to change mood
+  const changeMood = (moodName) => {
+    setCurrentMood(moodName);
+  };
 
-  // --- Fetch User, All Problems, and Specific Problem Data ---
+  // Check for success message from navigation state
   useEffect(() => {
-    // 1. Check for authenticated user
-    const fetchUser = async () => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the state to prevent showing the message again
+      navigate(location.pathname, { replace: true });
+      
+      // Auto-hide the message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+    }
+  }, [location.state, navigate]);
+
+  // Fetch user data and completed assessments
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoading(true);
+      
+      // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        // Fetch additional user data from users table
-        const { data, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        
-        if (error) {
-          console.error("Error fetching user data:", error);
-        } else {
-          setUserData(data);
-        }
-      } else {
+      if (!user) {
         navigate('/login');
+        return;
       }
+      
+      setUser(user);
+      
+      // Fetch user profile data
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      
+      if (userError) {
+        console.error("Error fetching user data:", userError);
+      } else {
+        setUserData(userData);
+      }
+      
+      // Fetch completed assessments
+      const { data: completedData, error: completedError } = await supabase
+        .from("user_assessments")
+        .select("problem_id, completed_at, score")
+        .eq("user_id", user.id)
+        .not("completed_at", "is", null);
+      
+      if (completedError) {
+        console.error("Error fetching completed assessments:", completedError);
+      } else {
+        setCompletedAssessments(completedData || []);
+      }
+      
+      // Set daily assessment
+      setDailyAssessment(getDailyAssessment());
+      
+      setLoading(false);
     };
-    fetchUser();
-
-    // 2. Fetch all problems for the dropdown selector
-    const fetchAllProblems = async () => {
-        const { data, error } = await supabase.from("problems").select("id, title");
-        if (error) {
-            console.error("Error fetching problem list:", error);
-        } else {
-            setAllProblems(data);
-        }
-    };
-    fetchAllProblems();
-
+    
+    fetchUserData();
   }, [navigate]);
 
-  // --- Initialize Timer Based on Difficulty ---
-  const initializeTimer = (difficulty) => {
-    let timeInMinutes = 10; // Default to Easy
-    switch (difficulty?.toLowerCase()) {
-      case 'easy':
-        timeInMinutes = 10;
-        break;
-      case 'medium':
-        timeInMinutes = 20;
-        break;
-      case 'hard':
+  // Start an assessment
+  const startAssessment = (assessmentId) => {
+    navigate(`/assessments/${assessmentId}/mcq`);
+  };
+
+  // Check if an assessment is completed
+  const isCompleted = (assessmentId) => {
+    return completedAssessments.some(a => a.problem_id === assessmentId);
+  };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl">Loading Assessments...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="min-h-screen relative overflow-hidden p-6"
+      style={{
+        backgroundImage: `url(${moods[currentMood].gif})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/40"></div>
+      
+      {/* Mood Selector */}
+      <div className="absolute top-4 right-4 z-10">
+        <select 
+          className="bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-lg px-3 py-2"
+          value={currentMood}
+          onChange={(e) => changeMood(e.target.value)}
+        >
+          {Object.keys(moods).map(mood => (
+            <option key={mood} value={mood}>
+              {moods[mood].icon} {mood}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="max-w-7xl relative z-10 mx-auto">
+        <h1 className="text-4xl font-bold mb-8">Assessment Dashboard</h1>
+        
+        {/* Success Message */}
+        {successMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="backdrop-blur-xl bg-green-500/20 border border-green-500/30 text-green-200 p-4 mb-6 rounded-xl"
+          >
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-lg font-semibold">{successMessage}</p>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* User Stats */}
+        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl p-6 mb-8 shadow-xl">
+          <h2 className="text-2xl font-semibold mb-4">Welcome, {userData?.username || user?.email}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-xl p-4 transition-all hover:bg-white/20">
+              <p className="text-white/80">Completed Assessments</p>
+              <p className="text-3xl font-bold">{completedAssessments.length}</p>
+            </div>
+            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-xl p-4 transition-all hover:bg-white/20">
+              <p className="text-white/80">Average Score</p>
+              <p className="text-3xl font-bold">
+                {completedAssessments.length > 0 
+                  ? Math.round(completedAssessments.reduce((sum, a) => sum + (a.score || 0), 0) / completedAssessments.length) + '%'
+                  : 'N/A'}
+              </p>
+            </div>
+            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-xl p-4 transition-all hover:bg-white/20">
+              <p className="text-white/80">Total Points</p>
+              <p className="text-3xl font-bold">{userData?.score || 0}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Featured Assessments */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* Daily Assessment */}
+          <motion.div 
+            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl shadow-xl overflow-hidden"
+            whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <span className="text-5xl filter drop-shadow-lg">{dailyAssessment.icon}</span>
+                  <h3 className="text-2xl font-bold mt-2">{dailyAssessment.title}</h3>
+                </div>
+                <span className="backdrop-blur-md bg-white/20 text-xs font-semibold px-3 py-1 rounded-full border border-white/30">
+                  {dailyAssessment.difficulty}
+                </span>
+              </div>
+              <p className="text-white/80 mb-6">{dailyAssessment.description}</p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-white/70">10 minutes</span>
+                <motion.button
+                  onClick={() => startAssessment(dailyAssessment.id)}
+                  className="px-4 py-2 backdrop-blur-md bg-white/20 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/30 transition-all"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={isCompleted(dailyAssessment.id)}
+                >
+                  {isCompleted(dailyAssessment.id) ? 'Completed' : 'Start Assessment'}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+          
+          {/* Weekly Assessment */}
+          <motion.div 
+            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl shadow-xl overflow-hidden"
+            whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <span className="text-5xl filter drop-shadow-lg">{weeklyAssessment.icon}</span>
+                  <h3 className="text-2xl font-bold mt-2">{weeklyAssessment.title}</h3>
+                </div>
+                <span className="backdrop-blur-md bg-white/20 text-xs font-semibold px-3 py-1 rounded-full border border-white/30">
+                  {weeklyAssessment.difficulty}
+                </span>
+              </div>
+              <p className="text-white/80 mb-6">{weeklyAssessment.description}</p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-white/70">Deadline: {weeklyAssessment.deadline}</span>
+                <motion.button
+                  onClick={() => startAssessment(weeklyAssessment.id)}
+                  className="px-4 py-2 backdrop-blur-md bg-white/20 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/30 transition-all"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={isCompleted(weeklyAssessment.id)}
+                >
+                  {isCompleted(weeklyAssessment.id) ? 'Completed' : 'Start Assessment'}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        
+        {/* Topic-wise Assessments */}
+        <h2 className="text-2xl font-bold mb-6 text-white/90">Topic-wise Assessments</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {assessmentTopics.map((topic) => (
+            <motion.div 
+              key={topic.id}
+              className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl shadow-xl overflow-hidden"
+              whileHover={{ scale: 1.03, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="p-6">
+                <div className="flex items-center mb-4">
+                  <span className="text-4xl mr-3 filter drop-shadow-lg">{topic.icon}</span>
+                  <h3 className="text-xl font-bold">{topic.title}</h3>
+                </div>
+                <p className="text-white/70 mb-6 h-12">{topic.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/60">
+                    {isCompleted(topic.id) ? 'Completed' : 'Not attempted'}
+                  </span>
+                  <motion.button
+                    onClick={() => startAssessment(topic.id)}
+                    className={`px-4 py-2 rounded-xl font-semibold backdrop-blur-md border ${isCompleted(topic.id) 
+                      ? 'bg-white/10 text-white/70 border-white/20' 
+                      : 'bg-white/20 text-white border-white/30 hover:bg-white/30 transition-all'}`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isCompleted(topic.id) ? 'Review' : 'Start'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

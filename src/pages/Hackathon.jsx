@@ -1,231 +1,344 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { supabase } from "../supabaseClient";
 
-// AI-based hackathon questions with varying difficulty levels
-const hackathonQuestions = [
-  {
-    id: 1,
-    title: "🤖 AI Pathfinding Challenge",
-    description: "Implement Dijkstra's algorithm to find the shortest path in a weighted graph. This is a fundamental algorithm used in AI navigation systems, GPS applications, and network routing.",
-    difficulty: "Hard",
-    category: "Algorithms",
-    timeLimit: "45 minutes",
-    points: 100,
-    tags: ["Graph Theory", "Dynamic Programming", "AI Navigation"]
-  },
-  {
-    id: 2,
-    title: "🧠 Neural Network from Scratch",
-    description: "Build a simple feedforward neural network without using any ML libraries. Implement the XOR operation using backpropagation. This challenge tests your understanding of deep learning fundamentals.",
-    difficulty: "Very Hard",
-    category: "Machine Learning",
-    timeLimit: "60 minutes",
-    points: 150,
-    tags: ["Neural Networks", "Backpropagation", "XOR Logic"]
-  },
-  {
-    id: 3,
-    title: "⚡ Dynamic Programming Mastery",
-    description: "Solve the Edit Distance problem using dynamic programming. This algorithm is crucial for spell checkers, DNA sequence analysis, and natural language processing applications.",
-    difficulty: "Hard",
-    category: "Algorithms",
-    timeLimit: "40 minutes",
-    points: 120,
-    tags: ["Dynamic Programming", "String Matching", "NLP"]
-  },
-  {
-    id: 4,
-    title: "🎯 Binary Search Tree Operations",
-    description: "Implement a self-balancing binary search tree (AVL tree) with insertion, deletion, and search operations. This data structure is essential for efficient database indexing.",
-    difficulty: "Medium",
-    category: "Data Structures",
-    timeLimit: "35 minutes",
-    points: 80,
-    tags: ["Trees", "Balancing", "Database Indexing"]
-  },
-  {
-    id: 5,
-    title: "🔐 Cryptography Challenge",
-    description: "Implement RSA encryption and decryption from scratch. This challenge covers modular arithmetic, prime number generation, and public-key cryptography fundamentals.",
-    difficulty: "Very Hard",
-    category: "Cryptography",
-    timeLimit: "75 minutes",
-    points: 200,
-    tags: ["RSA", "Modular Arithmetic", "Prime Numbers"]
-  },
-  {
-    id: 6,
-    title: "🌐 WebSocket Chat Server",
-    description: "Build a real-time chat server using WebSockets. Handle multiple client connections, message broadcasting, and implement basic chat room functionality.",
-    difficulty: "Medium",
-    category: "Web Development",
-    timeLimit: "50 minutes",
-    points: 90,
-    tags: ["WebSockets", "Real-time", "Networking"]
-  }
-];
+function formatCountdown(msRemaining) {
+  if (msRemaining <= 0) return "00d : 00h : 00m : 00s";
+  const totalSeconds = Math.floor(msRemaining / 1000);
+  const days = Math.floor(totalSeconds / (24 * 3600));
+  const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n) => n.toString().padStart(2, "0");
+  return `${pad(days)}d : ${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`;
+}
 
 export default function Hackathon() {
   const navigate = useNavigate();
-  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
-  const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const handleSolve = (problemId) => {
-    navigate(`/code-editor?problemId=${problemId}`);
+  // Auth + registration UI state
+  const [user, setUser] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedHackathon, setSelectedHackathon] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+
+  // Registration form fields
+  const [registrantName, setRegistrantName] = useState("");
+  const [registrantEmail, setRegistrantEmail] = useState("");
+  const [teamName, setTeamName] = useState("");
+  const [members, setMembers] = useState("");
+
+  // Sample hackathons. In a real app, fetch from DB.
+  const hackathons = useMemo(
+    () => [
+      {
+        id: 1,
+        title: "Mavericks Spring Hackathon",
+        description:
+          "Build innovative apps in 24 hours. Themes: AI Assistants, DevTools, and Education.",
+        start_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // in 2 days
+        end_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(), // +1 day
+        location: "Online",
+      },
+      {
+        id: 2,
+        title: "Edge AI Mini-Hack",
+        description:
+          "4-hour sprint focusing on edge inference and tinyML challenges.",
+        start_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // started 3h ago
+        end_at: new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString(), // ends in 1h
+        location: "Hybrid",
+      },
+      {
+        id: 3,
+        title: "Winter DevFest",
+        description: "A weekend-long festival of coding, talks, and workshops.",
+        start_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+        end_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
+        location: "Bangalore, IN",
+      },
+    ],
+    []
+  );
+
+  const now = Date.now();
+  const withStatus = useMemo(() => {
+    return hackathons
+      .map((h) => {
+        const start = new Date(h.start_at).getTime();
+        const end = new Date(h.end_at).getTime();
+        let status = "upcoming";
+        if (now >= start && now <= end) status = "ongoing";
+        if (now > end) status = "past";
+        return { ...h, status };
+      })
+      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  }, [hackathons, now]);
+
+  const upcoming = withStatus.filter((h) => h.status === "upcoming");
+  const ongoing = withStatus.filter((h) => h.status === "ongoing");
+  const past = withStatus.filter((h) => h.status === "past");
+
+  const nextUpcoming = upcoming[0] || null;
+  const [countdown, setCountdown] = useState(
+    nextUpcoming ? new Date(nextUpcoming.start_at).getTime() - Date.now() : 0
+  );
+
+  // Auth
+  useEffect(() => {
+    const initAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user || null);
+    };
+    initAuth();
+  }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!nextUpcoming) return;
+    const interval = setInterval(() => {
+      setCountdown(new Date(nextUpcoming.start_at).getTime() - Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [nextUpcoming]);
+
+  const openRegistration = (hackathon) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setSelectedHackathon(hackathon);
+    setRegistrantName("");
+    setRegistrantEmail("");
+    setTeamName("");
+    setMembers("");
+    setSubmitMessage("");
+    setShowForm(true);
   };
 
-  // Defensive: Ensure hackathonQuestions is always an array
-  const safeQuestions = Array.isArray(hackathonQuestions) ? hackathonQuestions : [];
+  const submitRegistration = async (e) => {
+    e.preventDefault();
+    if (!selectedHackathon || !user) return;
 
-  const filteredQuestions = safeQuestions.filter(q => {
-    const difficultyMatch = selectedDifficulty === "All" || q.difficulty === selectedDifficulty;
-    const categoryMatch = selectedCategory === "All" || q.category === selectedCategory;
-    return difficultyMatch && categoryMatch;
-  });
+    if (!teamName.trim()) {
+      setSubmitMessage("Please provide a Team Name.");
+      return;
+    }
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case "Easy": return "bg-green-500";
-      case "Medium": return "bg-yellow-500";
-      case "Hard": return "bg-orange-500";
-      case "Very Hard": return "bg-red-500";
-      default: return "bg-gray-500";
+    setIsSubmitting(true);
+    setSubmitMessage("Submitting...");
+    try {
+      const { error } = await supabase.from("hackathon_registrations").insert({
+        user_id: user.id,
+        hackathon_id: selectedHackathon.id,
+        team_name: teamName.trim(),
+        members: members.trim(),
+        registrant_name: registrantName.trim(),
+        registrant_email: registrantEmail.trim(),
+      });
+
+      if (error) {
+        console.error("Registration error:", error);
+        if (error.code === '23505') {
+          setSubmitMessage("❌ You are already registered for this hackathon.");
+        } else {
+          setSubmitMessage("❌ Registration failed. Please try again later.");
+        }
+      } else {
+        setSubmitMessage("✅ Registered successfully! Redirecting to dashboard...");
+        setTimeout(() => {
+          setShowForm(false);
+          navigate(`/hackathons/${selectedHackathon.id}/dashboard`);
+        }, 1500);
+      }
+    } catch (err) {
+      console.error(err);
+      setSubmitMessage(`❌ ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
-      {/* Header */}
-      <div className="container mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            🤖 AI Hackathon Portal
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Challenge yourself with AI-powered programming problems. Solve complex algorithms, 
-            build neural networks, and master advanced data structures.
-          </p>
-        </motion.div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 justify-center mb-8">
-          <select
-            value={selectedDifficulty}
-            onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="px-4 py-2 bg-gray-800 rounded-lg border border-gray-600 focus:border-cyan-400 focus:outline-none"
-          >
-            <option value="All">All Difficulties</option>
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-            <option value="Very Hard">Very Hard</option>
-          </select>
-
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 bg-gray-800 rounded-lg border border-gray-600 focus:border-cyan-400 focus:outline-none"
-          >
-            <option value="All">All Categories</option>
-            <option value="Algorithms">Algorithms</option>
-            <option value="Machine Learning">Machine Learning</option>
-            <option value="Data Structures">Data Structures</option>
-            <option value="Cryptography">Cryptography</option>
-            <option value="Web Development">Web Development</option>
-          </select>
-        </div>
-
-        {/* Questions Grid */}
+  const Section = ({ title, items }) => (
+    <div className="mb-10">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold">{title}</h2>
+        <div className="h-px flex-1 ml-4 bg-gray-700" />
+      </div>
+      {items.length === 0 ? (
+        <div className="text-gray-400">No hackathons here.</div>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredQuestions.map((question, index) => (
-            <motion.div
-              key={question.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-cyan-400 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/20"
+          {items.map((h) => (
+            <div
+              key={h.id}
+              className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 backdrop-blur-sm hover:border-cyan-400 transition"
             >
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold text-cyan-400">{question.title}</h2>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(question.difficulty)}`}>
-                  {question.difficulty}
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-xl font-semibold">{h.title}</h3>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    h.status === "ongoing"
+                      ? "bg-green-500/20 text-green-300"
+                      : h.status === "upcoming"
+                      ? "bg-yellow-500/20 text-yellow-300"
+                      : "bg-gray-600/30 text-gray-300"
+                  }`}
+                >
+                  {h.status.toUpperCase()}
                 </span>
               </div>
-
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                {question.description}
-              </p>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {(question.tags || []).map((tag, tagIndex) => (
-                  <span
-                    key={tagIndex}
-                    className="px-2 py-1 bg-gray-700 rounded-full text-xs text-gray-300"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              <p className="text-gray-300 mb-3 line-clamp-3">{h.description}</p>
+              <div className="text-sm text-gray-400 mb-4">
+                <div>📍 {h.location}</div>
+                <div>🗓️ {new Date(h.start_at).toLocaleString()} → {new Date(h.end_at).toLocaleString()}</div>
               </div>
-
-              <div className="flex justify-between items-center mb-4 text-sm text-gray-400">
-                <span>⏱️ {question.timeLimit}</span>
-                <span>🏆 {question.points} pts</span>
-                <span>📂 {question.category}</span>
-              </div>
-
               <button
-                onClick={() => handleSolve(question.id)}
-                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105"
+                onClick={() => openRegistration(h)}
+                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 transition font-semibold"
               >
-                🚀 Start Challenge
+                Register
               </button>
-            </motion.div>
+            </div>
           ))}
         </div>
+      )}
+    </div>
+  );
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-12 text-center"
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="bg-gray-800/30 rounded-lg p-4">
-              <div className="text-2xl font-bold text-cyan-400">{hackathonQuestions.length}</div>
-              <div className="text-gray-400">Total Challenges</div>
-            </div>
-            <div className="bg-gray-800/30 rounded-lg p-4">
-              <div className="text-2xl font-bold text-purple-400">740</div>
-              <div className="text-gray-400">Total Points</div>
-            </div>
-            <div className="bg-gray-800/30 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-400">5</div>
-              <div className="text-gray-400">Categories</div>
-            </div>
-            <div className="bg-gray-800/30 rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-400">∞</div>
-              <div className="text-gray-400">Time to Code</div>
-            </div>
-          </div>
-        </motion.div>
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      {/* Hero */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/60 via-indigo-900/60 to-gray-900/80" />
+        <div className="container mx-auto px-6 py-14 relative">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+              Mavericks Hackathons
+            </h1>
+            <p className="mt-4 text-lg md:text-xl text-gray-300 max-w-3xl">
+              Collaborate, build, and ship. Join our community events to turn ideas into real products.
+            </p>
 
-        {/* Navigation */}
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors duration-300"
-          >
-            ← Back to Dashboard
-          </button>
+            {nextUpcoming ? (
+              <div className="mt-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 inline-flex flex-col md:flex-row md:items-center gap-4">
+                <div>
+                  <div className="text-sm text-gray-300">Next Hackathon</div>
+                  <div className="text-xl font-semibold">{nextUpcoming.title}</div>
+                  <div className="text-gray-400 text-sm">
+                    {new Date(nextUpcoming.start_at).toLocaleString()} → {new Date(nextUpcoming.end_at).toLocaleString()}
+                  </div>
+                </div>
+                <div className="md:ml-auto text-center">
+                  <div className="text-xs text-gray-300">Starts in</div>
+                  <div className="text-2xl md:text-3xl font-mono">{formatCountdown(countdown)}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 text-gray-300">No upcoming hackathons. Check back soon!</div>
+            )}
+          </motion.div>
         </div>
       </div>
+
+      {/* Sections */}
+      <div className="container mx-auto px-6 py-10">
+        <Section title="Ongoing Hackathons" items={ongoing} />
+        <Section title="Upcoming Hackathons" items={upcoming} />
+        <Section title="Past Hackathons" items={past} />
+      </div>
+
+      {/* Registration Modal */}
+      {showForm && selectedHackathon && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-sm text-gray-400">Register for</div>
+                <div className="text-xl font-bold">{selectedHackathon.title}</div>
+              </div>
+              <button onClick={() => setShowForm(false)} className="text-gray-300 hover:text-white">✕</button>
+            </div>
+
+            <form onSubmit={submitRegistration} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={registrantName}
+                    onChange={(e) => setRegistrantName(e.target.value)}
+                    placeholder="Your full name"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={registrantEmail}
+                    onChange={(e) => setRegistrantEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Team Name</label>
+                <input
+                  type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="e.g., Mavericks Builders"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Members</label>
+                <input
+                  type="text"
+                  value={members}
+                  onChange={(e) => setMembers(e.target.value)}
+                  placeholder="Comma-separated names"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
+
+              {submitMessage && (
+                <div className="text-sm text-gray-200 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2">
+                  {submitMessage}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`px-5 py-2 rounded-lg font-semibold bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${
+                    isSubmitting ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Registration"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
