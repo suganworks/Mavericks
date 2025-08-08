@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import { checkIfAdmin } from '../auth';
 import Chart from 'chart.js/auto';
 
 // --- Icon Components (using inline SVG for simplicity) ---
@@ -114,6 +115,14 @@ export default function Dashboard() {
                 return;
             }
             setUser(user);
+            
+            // Check if user is an admin (for OAuth redirects)
+            const isAdmin = await checkIfAdmin(user.id);
+            if (isAdmin) {
+                // Redirect to admin management page if they're an admin
+                navigate("/admin");
+                return;
+            }
             
             // Fetch user data from users table
             const { data, error } = await supabase

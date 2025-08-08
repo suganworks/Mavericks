@@ -1,30 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// MOCK AUTHENTICATION LOGIC
-const getMockUserProfile = async () => {
-await new Promise(resolve => setTimeout(resolve, 250));
-const mockProfile = {
-id: 'admin-user-id',
-username: 'admin',
-email: 'admin@mavericks.com',
-is_admin: true // Set to 'true' to test the admin view
-};
-return mockProfile;
-};
+import { supabase } from '../supabaseClient';
+import { checkIfAdmin } from '../auth';
 const AdminRoute = ({ children }) => {
 const navigate = useNavigate();
 const [isAuthorized, setIsAuthorized] = useState(false);
 const [loading, setLoading] = useState(true);
 useEffect(() => {
 const checkAdminStatus = async () => {
-const userProfile = await getMockUserProfile();
-if (userProfile && userProfile.is_admin === true) {
-    setIsAuthorized(true);
-  } else {
-    console.log("Mock access denied. User is not an admin. Redirecting...");
-    navigate('/'); 
+  try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log("No user logged in. Redirecting to login...");
+      navigate('/login');
+      return;
+    }
+    
+    // Check if the user is an admin
+    const isAdmin = await checkIfAdmin(user.id);
+    
+    if (isAdmin) {
+      setIsAuthorized(true);
+    } else {
+      console.log("Access denied. User is not an admin. Redirecting...");
+      navigate('/dashboard');
+    }
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    navigate('/login');
+  } finally {
+    setLoading(false);
   }
-  setLoading(false);
 };
 
 checkAdminStatus();
