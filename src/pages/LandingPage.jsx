@@ -7,6 +7,7 @@ const useIntersect = (options) => {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
+        if (!ref.current) return; // guard for first render
         const observer = new IntersectionObserver(([entry]) => {
             if (entry.isIntersecting) {
                 setIsVisible(true);
@@ -14,16 +15,13 @@ const useIntersect = (options) => {
             }
         }, options);
 
-        if (ref.current) {
-            observer.observe(ref.current);
-        }
+        observer.observe(ref.current);
 
         return () => {
-            if (ref.current) {
-                observer.unobserve(ref.current);
-            }
+            if (ref.current) observer.unobserve(ref.current);
+            observer.disconnect();
         };
-    }, [ref, options]);
+    }, [options]);
 
     return [ref, isVisible];
 };
@@ -40,17 +38,15 @@ const Navbar = () => (
                 </div>
                 <div className="hidden md:flex items-center space-x-4">
                     <motion.button
-                        href="#"
                         className="px-6 py-3 rounded-[1rem] bg-white/10 backdrop-blur-2xl border border-white/20 text-white hover:bg-white/20 transition-all duration-300 text-sm font-bold"
-                        whilehover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.05 }}
                         onClick={() => window.location.href = '/login'}
                     >
                         Login
                     </motion.button>
                     <motion.button
-                        href="#"
                         className="px-6 py-3 rounded-[1rem] bg-cyan-400 text-black hover:bg-cyan-500 transition-all duration-300 text-sm font-bold"
-                        whilehover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.05 }}
                         onClick={() => window.location.href = '/register'}
                     >
                         Register
@@ -87,12 +83,12 @@ const HeroSection = ({ id, bg }) => {
                     Mavericks is the ultimate AI-powered platform designed to forge elite developers. Ditch the tutorials and accelerate your journey from zero to hero.
                 </p>
                <motion.button
-  className="px-10 py-4 rounded-xl bg-indigo-600 text-white text-lg font-bold shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all duration-300"
-  whileHover={{ scale: 1.05 }}
-  onClick={() => (window.location.href = '/register')}
->
-  Dive In Now
-</motion.button>
+                    className="px-10 py-4 rounded-xl bg-indigo-600 text-white text-lg font-bold shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => (window.location.href = '/register')}
+                >
+                    Dive In Now
+                </motion.button>
             </div>
         </section>
     );
@@ -131,7 +127,6 @@ const RoadmapSection = ({ id, bg }) => {
                     <p className="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">Your journey from novice to Maverick is a structured path to success.</p>
                 </div>
                 <div className="relative">
-                    {/* Vertical line */}
                     <div className="absolute left-1/2 -translate-x-1/2 h-full w-0.5 bg-indigo-500/30" aria-hidden="true"></div>
                     <div className="space-y-16">
                         {roadmapItems.map((item, index) => (
@@ -199,19 +194,30 @@ const CtaSection = ({ id, bg }) => (
             <h2 className="text-4xl md:text-6xl font-black text-white text-glow">Join the Revolution.</h2>
             <p className="mt-6 text-lg md:text-xl text-gray-300">Your journey to becoming a top-tier developer starts now. Are you ready to build the future?</p>
             <div className="mt-10">
-  <button
-    onClick={() => window.location.href = '/register'}
-    className="inline-block bg-indigo-600 text-white text-lg font-bold px-10 py-4 rounded-xl shadow-2xl shadow-indigo-600/40 transition-transform hover:scale-105 transform"
-  >
-    Get Started
-  </button>
-</div>
+                <button
+                    onClick={() => window.location.href = '/register'}
+                    className="inline-block bg-indigo-600 text-white text-lg font-bold px-10 py-4 rounded-xl shadow-2xl shadow-indigo-600/40 transition-transform hover:scale-105 transform"
+                >
+                    Get Started
+                </button>
+            </div>
         </div>
     </Section>
 );
 
 const Footer = () => (
-    <footer className="bg-black bg-opacity-50 mt-auto"><div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8"><div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"><p className="text-gray-400 text-sm">&copy; 2025 Mavericks. All rights reserved.</p><div className="flex space-x-6"><a href="#" className="text-gray-400 hover:text-white transition-colors">Twitter</a><a href="#" className="text-gray-400 hover:text-white transition-colors">GitHub</a><a href="#" className="text-gray-400 hover:text-white transition-colors">LinkedIn</a></div></div></div></footer>
+    <footer className="bg-black bg-opacity-50 mt-auto">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                <p className="text-gray-400 text-sm">&copy; 2025 Mavericks. All rights reserved.</p>
+                <div className="flex space-x-6">
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors">Twitter</a>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors">GitHub</a>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors">LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 );
 
 // --- Main App Component ---
@@ -220,22 +226,23 @@ export default function App() {
 
     useEffect(() => {
         const sections = document.querySelectorAll('section[data-bg]');
+        if (sections.length > 0) setCurrentBg(sections[0].getAttribute('data-bg'));
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const newBg = entry.target.getAttribute('data-bg');
-                        setCurrentBg(newBg);
+                        if (newBg) setCurrentBg(newBg);
                     }
                 });
             },
             { root: null, rootMargin: '0px', threshold: 0.4 }
         );
         sections.forEach(section => observer.observe(section));
-        if (sections.length > 0) {
-            setCurrentBg(sections[0].getAttribute('data-bg'));
-        }
-        return () => sections.forEach(section => observer.unobserve(section));
+        return () => {
+            sections.forEach(section => observer.unobserve(section));
+            observer.disconnect();
+        };
     }, []);
 
     return (
