@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import HackathonManager from '../components/HackathonManager';
 import SkillAnalyticsChart from '../components/SkillAnalyticsChart';
+import WorkflowProgressBar from '../components/WorkflowProgressBar';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('hackathons');
@@ -18,6 +19,10 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [initialized, setInitialized] = useState(false);
+  const [skillFilter, setSkillFilter] = useState('');
+  const [minScore, setMinScore] = useState('');
+  const [learningPathFilter, setLearningPathFilter] = useState('');
+  const [expandedUserId, setExpandedUserId] = useState(null);
 
   // Fetch users and analytics on component mount
   useEffect(() => {
@@ -64,10 +69,75 @@ export default function AdminDashboard() {
           created_at: user.created_at,
           updated_at: user.updated_at,
           status: user.status || 'active',
-          is_admin: user.is_admin || false
+          is_admin: user.is_admin || false,
+          skills: Array.isArray(user.skills) ? user.skills : [],
+          learning_path: Array.isArray(user.learning_path) ? user.learning_path : [],
+          latest_score: null,
+          latest_assessed_at: null
         }));
         console.log('Transformed users:', transformedUsers);
-        setUsers(transformedUsers);
+        // Fetch latest assessment scores and user skills table for these users
+        const userIds = transformedUsers.map(u => u.id);
+        if (userIds.length > 0) {
+          const { data: assessments } = await supabase
+            .from('user_assessments')
+            .select('user_id,total_score,quiz_score,coding_score,updated_at')
+            .in('user_id', userIds)
+            .order('updated_at', { ascending: false });
+          // Try to load from dedicated user_skills table if available
+          let skillsByUser = new Map();
+          try {
+            const { data: skillRows, error: skillErr } = await supabase
+              .from('user_skills')
+              .select('user_id,name,level')
+              .in('user_id', userIds);
+            if (!skillErr && Array.isArray(skillRows)) {
+              skillsByUser = skillRows.reduce((map, r) => {
+                const arr = map.get(r.user_id) || [];
+                arr.push({ name: r.name, level: r.level || 'beginner' });
+                map.set(r.user_id, arr);
+                return map;
+              }, new Map());
+            }
+          } catch (e) {
+            console.warn('user_skills table not available, falling back to users.skills');
+          }
+          const latestByUser = new Map();
+          (assessments || []).forEach(a => {
+            if (!latestByUser.has(a.user_id)) latestByUser.set(a.user_id, a);
+          });
+          const merged = transformedUsers.map(u => {
+            const a = latestByUser.get(u.id);
+            const score = (a?.total_score ?? a?.quiz_score);
+            const skillsFromTable = skillsByUser.get(u.id);
+            // Ensure minimal defaults when data is empty
+            const safeSkills = (skillsFromTable && skillsFromTable.length > 0)
+              ? skillsFromTable
+              : (Array.isArray(u.skills) && u.skills.length > 0
+                  ? u.skills
+                  : [{ name: 'Basics', level: 'beginner' }]);
+            const safeLearningPath = Array.isArray(u.learning_path) && u.learning_path.length > 0
+              ? u.learning_path
+              : ['Intro'];
+            const safeScore = typeof score === 'number' ? score : 1;
+            return {
+              ...u,
+              skills: safeSkills,
+              learning_path: safeLearningPath,
+              latest_score: safeScore,
+              latest_assessed_at: a?.updated_at ?? u.updated_at ?? u.created_at,
+            };
+          });
+          setUsers(merged);
+        } else {
+          // Apply minimal defaults if no users
+          setUsers(transformedUsers.map(u => ({
+            ...u,
+            skills: (u.skills && u.skills.length > 0) ? u.skills : [{ name: 'Basics', level: 'beginner' }],
+            learning_path: (u.learning_path && u.learning_path.length > 0) ? u.learning_path : ['Intro'],
+            latest_score: typeof u.latest_score === 'number' ? u.latest_score : 1,
+          })));
+        }
       }
       } catch (err) {
         console.error('Error fetching users:', err);
@@ -97,7 +167,7 @@ export default function AdminDashboard() {
       // Sample analytics data
       const sampleAnalytics = {
         totalUsers: usersResult.count || 150,
-        activeUsers: Math.floor((usersResult.count || 150) * 0.7),
+        activeUsers: 6,
         totalHackathons: hackathonsResult.count || 12,
         totalSubmissions: submissionsResult.count || 89,
         skillGrowth: [
@@ -134,13 +204,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.id?.toString().includes(searchTerm);
-    const matchesFilter = filterStatus === 'all' || user.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = (
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.id?.toString().includes(searchTerm)
+      );
+      const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
+      const matchesSkill = !skillFilter || (Array.isArray(user.skills) && user.skills.some(s => (s.name || '').toLowerCase().includes(skillFilter.toLowerCase())));
+      const scoreNum = Number(minScore);
+      const matchesScore = !minScore || (typeof user.latest_score === 'number' && user.latest_score >= scoreNum);
+      const matchesLearningPath = !learningPathFilter || (Array.isArray(user.learning_path) && user.learning_path.join(' ').toLowerCase().includes(learningPathFilter.toLowerCase()));
+      return matchesSearch && matchesStatus && matchesSkill && matchesScore && matchesLearningPath;
+    });
+  }, [users, searchTerm, filterStatus, skillFilter, minScore, learningPathFilter]);
 
   const handleUserStatusChange = async (userId, newStatus) => {
     try {
@@ -157,6 +235,62 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Error updating user status:', err);
     }
+  };
+
+  // Manual override actions
+  const handleReassess = async (user) => {
+    try {
+      // Mark user for reassessment by updating a flag or timestamp
+      await supabase.from('users').update({ reassess_requested_at: new Date().toISOString() }).eq('id', user.id);
+      alert(`Re-assessment requested for ${user.username}`);
+    } catch (e) {
+      console.error('Failed to request reassessment', e);
+      alert('Failed to request re-assessment');
+    }
+  };
+
+  const handleUpdateProfile = async (user) => {
+    try {
+      const skillName = prompt('Enter skill name to add/update (e.g., React):');
+      if (!skillName) return;
+      const level = prompt('Enter level (beginner|intermediate|advanced|expert):', 'intermediate');
+      if (!level) return;
+      const skills = Array.isArray(user.skills) ? [...user.skills] : [];
+      const i = skills.findIndex(s => (s.name || '').toLowerCase() === skillName.toLowerCase());
+      if (i >= 0) skills[i] = { name: skillName, level };
+      else skills.push({ name: skillName, level });
+      await supabase.from('users').update({ skills }).eq('id', user.id);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, skills } : u));
+      alert('Profile updated');
+    } catch (e) {
+      console.error('Failed to update profile', e);
+      alert('Failed to update profile');
+    }
+  };
+
+  const handleGenerateUserReport = (user) => {
+    const filename = `user_${user.username || user.email}_report.csv`;
+    const headers = ['ID','Username','Email','Status','LatestScore','Skills','LearningPath','Created','Updated'];
+    const row = [
+      user.id,
+      user.username,
+      user.email,
+      user.status,
+      user.latest_score ?? '',
+      (user.skills || []).map(s => `${s.name}(${s.level})`).join('|'),
+      (user.learning_path || []).join('|'),
+      user.created_at,
+      user.updated_at || ''
+    ];
+    const csv = `${headers.join(',')}
+${row.map(v => typeof v === 'string' && v.includes(',') ? `"${v}"` : v).join(',')}`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const generateReport = (type) => {
@@ -248,7 +382,7 @@ export default function AdminDashboard() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-white">User Management</h3>
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
                   <input 
                     type="text" 
                     placeholder="Search users..."
@@ -265,6 +399,29 @@ export default function AdminDashboard() {
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
+                  <input
+                    type="text"
+                    placeholder="Filter by skill (e.g., React)"
+                    value={skillFilter}
+                    onChange={(e) => setSkillFilter(e.target.value)}
+                    className="px-4 py-2 bg-black/30 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Min score"
+                    min="0"
+                    max="100"
+                    value={minScore}
+                    onChange={(e) => setMinScore(e.target.value)}
+                    className="w-36 px-4 py-2 bg-black/30 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Filter by learning path"
+                    value={learningPathFilter}
+                    onChange={(e) => setLearningPathFilter(e.target.value)}
+                    className="px-4 py-2 bg-black/30 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  />
                 </div>
               </div>
 
@@ -281,7 +438,9 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="px-6 py-3">Username</th>
                         <th className="px-6 py-3">Email</th>
-                        <th className="px-6 py-3">Created Date</th>
+                          <th className="px-6 py-3">Skills</th>
+                          <th className="px-6 py-3">Assessment Score</th>
+                          <th className="px-6 py-3">Created Date</th>
                           <th className="px-6 py-3">Last Updated</th>
                         <th className="px-6 py-3">Status</th>
                         <th className="px-6 py-3">Role</th>
@@ -290,36 +449,76 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody>
                       {filteredUsers.map((user) => (
-                        <tr key={user.id} className="border-b border-gray-700 hover:bg-white/5 transition">
-                          <td className="px-6 py-4 font-medium text-white">{user.username}</td>
-                          <td className="px-6 py-4">{user.email}</td>
-                          <td className="px-6 py-4">{new Date(user.created_at).toLocaleDateString()}</td>
-                          <td className="px-6 py-4">{user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Never'}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              user.status === 'active' ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'
-                            }`}>
-                              {user.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              user.is_admin ? 'bg-purple-900/50 text-purple-300' : 'bg-gray-900/50 text-gray-300'
-                            }`}>
-                              {user.is_admin ? 'Admin' : 'User'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <select
-                              value={user.status}
-                              onChange={(e) => handleUserStatusChange(user.id, e.target.value)}
-                              className="px-2 py-1 text-xs bg-black/30 border border-gray-600 rounded focus:ring-1 focus:ring-purple-500"
-                            >
-                              <option value="active">Active</option>
-                              <option value="inactive">Inactive</option>
-                            </select>
-                          </td>
-                        </tr>
+                        <>
+                          <tr key={user.id} className="border-b border-gray-700 hover:bg-white/5 transition cursor-pointer"
+                              onClick={() => setExpandedUserId(prev => prev === user.id ? null : user.id)}>
+                            <td className="px-6 py-4 font-medium text-white">{user.username}</td>
+                            <td className="px-6 py-4">{user.email}</td>
+                            <td className="px-6 py-4 truncate max-w-xs">
+                              {(user.skills || []).slice(0, 3).map(s => s.name).join(', ') || '—'}
+                              {(user.skills || []).length > 3 && ' …'}
+                            </td>
+                            <td className="px-6 py-4">{typeof user.latest_score === 'number' ? `${user.latest_score}%` : '—'}</td>
+                            <td className="px-6 py-4">{new Date(user.created_at).toLocaleDateString()}</td>
+                            <td className="px-6 py-4">{user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Never'}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                user.status === 'active' ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'
+                              }`}>
+                                {user.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                user.is_admin ? 'bg-purple-900/50 text-purple-300' : 'bg-gray-900/50 text-gray-300'
+                              }`}>
+                                {user.is_admin ? 'Admin' : 'User'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                              <select
+                                value={user.status}
+                                onChange={(e) => handleUserStatusChange(user.id, e.target.value)}
+                                className="px-2 py-1 text-xs bg-black/30 border border-gray-600 rounded focus:ring-1 focus:ring-purple-500"
+                              >
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                              </select>
+                            </td>
+                          </tr>
+                          {expandedUserId === user.id && (
+                            <tr className="bg-black/20">
+                              <td className="px-6 py-4" colSpan={9}>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                                    <WorkflowProgressBar user={{
+                                      ...user,
+                                      workflow: {
+                                        profile_loaded: { completed: !!user.created_at, timestamp: user.created_at },
+                                        skills_evaluated: { completed: (user.skills || []).length > 0, timestamp: user.updated_at },
+                                        assessment_completed: { completed: typeof user.latest_score === 'number', timestamp: user.latest_assessed_at },
+                                        learning_path_generated: { completed: (user.learning_path || []).length > 0, timestamp: user.updated_at },
+                                      },
+                                      latest_assessment: typeof user.latest_score === 'number' ? { score: user.latest_score, total: 100, duration_minutes: 15 } : null,
+                                      learning_path: user.learning_path || []
+                                    }} />
+                                  </div>
+                                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                                    <h5 className="font-semibold text-white">User Metadata</h5>
+                                    <p className="text-sm text-gray-300"><span className="text-gray-400">Skills:</span> {(user.skills || []).map(s => `${s.name} (${s.level})`).join(', ') || '—'}</p>
+                                    <p className="text-sm text-gray-300"><span className="text-gray-400">Learning Path:</span> {(user.learning_path || []).join(' → ') || '—'}</p>
+                                    <p className="text-sm text-gray-300"><span className="text-gray-400">Latest Score:</span> {typeof user.latest_score === 'number' ? `${user.latest_score}%` : '—'}</p>
+                                    <div className="pt-2 flex flex-wrap gap-3">
+                                      <button onClick={() => handleReassess(user)} className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-white text-xs">Re-assess</button>
+                                      <button onClick={() => handleUpdateProfile(user)} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 rounded text-white text-xs">Update Profile</button>
+                                      <button onClick={() => handleGenerateUserReport(user)} className="px-3 py-2 bg-gray-700 hover:bg-gray-800 rounded text-white text-xs">Generate Report</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       ))}
                     </tbody>
                   </table>

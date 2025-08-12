@@ -248,7 +248,7 @@ export default function HackathonManager() {
                     <td className="px-6 py-4">{hackathon.hackathon_registrations?.[0]?.count || 0}</td>
                     <td className="px-6 py-4">{hackathon.hackathon_submissions?.[0]?.count || 0}</td>
                     <td className="px-6 py-4">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleEdit(hackathon)}
                           className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
@@ -261,6 +261,18 @@ export default function HackathonManager() {
                         >
                           Delete
                         </button>
+                        <a
+                          href={`/hackathons/${hackathon.id}/leaderboard`}
+                          className="px-3 py-1 text-xs font-medium text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition"
+                        >
+                          View Leaderboard
+                        </a>
+                        <a
+                          href={`/hackathons/${hackathon.id}/score-report`}
+                          className="px-3 py-1 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition"
+                        >
+                          Score Report
+                        </a>
                       </div>
                     </td>
                   </tr>
