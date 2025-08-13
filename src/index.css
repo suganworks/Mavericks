@@ -161,3 +161,83 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ===== Premiere animated aurora background (no images) ===== */
+.premiere-aurora {
+  position: absolute;
+  filter: blur(60px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.premiere-aurora--a {
+  width: 60vw;
+  height: 60vw;
+  left: -20vw;
+  top: -10vh;
+  background: radial-gradient(closest-side, rgba(56, 189, 248, 0.7), rgba(56, 189, 248, 0) 70%);
+  animation: aurora-orbit-a 22s ease-in-out infinite;
+}
+
+.premiere-aurora--b {
+  width: 55vw;
+  height: 55vw;
+  right: -15vw;
+  top: 10vh;
+  background: radial-gradient(closest-side, rgba(168, 85, 247, 0.7), rgba(168, 85, 247, 0) 70%);
+  animation: aurora-orbit-b 26s ease-in-out infinite;
+}
+
+.premiere-aurora--c {
+  width: 50vw;
+  height: 50vw;
+  left: 10vw;
+  bottom: -15vh;
+  background: radial-gradient(closest-side, rgba(236, 72, 153, 0.65), rgba(236, 72, 153, 0) 70%);
+  animation: aurora-orbit-c 28s ease-in-out infinite;
+}
+
+.premiere-aurora--d {
+  width: 65vw;
+  height: 65vw;
+  right: 5vw;
+  bottom: -20vh;
+  background: radial-gradient(closest-side, rgba(34, 197, 94, 0.6), rgba(34, 197, 94, 0) 70%);
+  animation: aurora-orbit-d 32s ease-in-out infinite;
+}
+
+@keyframes aurora-orbit-a {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(10vw, 5vh, 0) scale(1.1); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes aurora-orbit-b {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-8vw, -6vh, 0) scale(1.05); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes aurora-orbit-c {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-6vw, 4vh, 0) scale(1.08); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes aurora-orbit-d {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(6vw, -4vh, 0) scale(1.12); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.premiere-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px;
+  mask-image: radial-gradient(circle at center, rgba(0,0,0,0.75), rgba(0,0,0,0.95));
+  pointer-events: none;
+}

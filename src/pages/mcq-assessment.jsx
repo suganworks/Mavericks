@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { motion } from "framer-motion";
+import PremiereBackground from "../components/PremiereBackground";
 import useAssessmentSecurity from "../hooks/useAssessmentSecurity";
-import { moods } from "../../data/moods";
+ 
 
 // Get Quiz Questions by Topic (reusing from assessment-flow.jsx)
 const getQuizQuestionsByTopic = (topic) => {
@@ -583,7 +584,6 @@ const MCQAssessment = () => {
     const [isTimeUp, setIsTimeUp] = useState(false);
     const [loading, setLoading] = useState(true);
     const [output, setOutput] = useState("");
-    const [currentMood, setCurrentMood] = useState("Galaxy Night"); // Default mood
     
     // Assessment security implementation
     const { tabSwitchWarnings } = useAssessmentSecurity({
@@ -713,16 +713,8 @@ const MCQAssessment = () => {
     // Render loading state
     if (loading) {
         return (
-            <div 
-                className="min-h-screen relative overflow-hidden flex items-center justify-center"
-                style={{
-                    backgroundImage: `url(${moods[currentMood].gif})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat'
-                }}
-            >
-                <div className="absolute inset-0 bg-black/40"></div>
+            <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+                <PremiereBackground darkOverlay={true} />
                 <div className="text-center relative z-10">
                     <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-xl text-white">Loading Assessment...</p>
@@ -732,32 +724,10 @@ const MCQAssessment = () => {
     }
 
     return (
-        <div 
-            className="min-h-screen relative overflow-hidden"
-            style={{
-                backgroundImage: `url(${moods[currentMood].gif})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-            }}
-        >
-            {/* Overlay for better text readability */}
-            <div className="absolute inset-0 bg-black/40"></div>
+        <div className="min-h-screen relative overflow-hidden">
+            <PremiereBackground darkOverlay={true} />
             
-            {/* Mood Selector */}
-            <div className="absolute top-4 right-4 z-10">
-                <select 
-                    className="bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-lg px-3 py-2"
-                    value={currentMood}
-                    onChange={(e) => setCurrentMood(e.target.value)}
-                >
-                    {Object.keys(moods).map(mood => (
-                        <option key={mood} value={mood}>
-                            {moods[mood].icon} {mood}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            
             
             {/* Header */}
             <div className="backdrop-blur-md bg-white/10 border-b border-white/20 p-4 flex justify-between items-center relative z-10 text-white">

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import PremiereBackground from "../components/PremiereBackground";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { motion } from "framer-motion";
-import { moods } from "../../data/moods";
+ 
 
 // --- Language Icons ---
 const LanguageIcons = {
@@ -112,13 +113,21 @@ export default function Assessments() {
   const [userData, setUserData] = useState(null);
   const [dailyAssessment, setDailyAssessment] = useState(null);
   const [completedAssessments, setCompletedAssessments] = useState([]);
-  const [currentMood, setCurrentMood] = useState("Galaxy Night"); // Default mood
   const [successMessage, setSuccessMessage] = useState(null);
   
-  // Function to change mood
-  const changeMood = (moodName) => {
-    setCurrentMood(moodName);
-  };
+  const animatedGradientStyles = `
+    .animated-gradient-bg {
+      background: linear-gradient(-45deg, #0ea5e9, #8b5cf6, #ec4899, #22c55e);
+      background-size: 400% 400%;
+      animation: gradientShift 18s ease infinite;
+      position: relative;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  `;
 
   // Check for success message from navigation state
   useEffect(() => {
@@ -206,32 +215,11 @@ export default function Assessments() {
   }
 
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden p-6"
-      style={{
-        backgroundImage: `url(${moods[currentMood].gif})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/40"></div>
+    <div className="min-h-screen relative overflow-hidden p-6">
+      <PremiereBackground darkOverlay={true} />
       
-      {/* Mood Selector */}
-      <div className="absolute top-4 right-4 z-10">
-        <select 
-          className="bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-lg px-3 py-2"
-          value={currentMood}
-          onChange={(e) => changeMood(e.target.value)}
-        >
-          {Object.keys(moods).map(mood => (
-            <option key={mood} value={mood}>
-              {moods[mood].icon} {mood}
-            </option>
-          ))}
-        </select>
-      </div>
+      
+      
       
       <div className="max-w-7xl relative z-10 mx-auto">
         <h1 className="text-4xl font-bold mb-8">Assessment Dashboard</h1>

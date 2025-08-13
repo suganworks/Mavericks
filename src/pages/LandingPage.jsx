@@ -83,7 +83,7 @@ const HeroSection = ({ id, bg }) => {
                     Mavericks is the ultimate AI-powered platform designed to forge elite developers. Ditch the tutorials and accelerate your journey from zero to hero.
                 </p>
                <motion.button
-                    className="px-10 py-4 rounded-xl bg-indigo-600 text-white text-lg font-bold shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all duration-300"
+                    className="mt-6 px-10 py-4 rounded-xl bg-indigo-600 text-white text-lg font-bold shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all duration-300"
                     whileHover={{ scale: 1.05 }}
                     onClick={() => (window.location.href = '/register')}
                 >
@@ -131,16 +131,27 @@ const RoadmapSection = ({ id, bg }) => {
                     <div className="space-y-16">
                         {roadmapItems.map((item, index) => (
                             <div key={index} className="flex items-center w-full">
-                                <div className={`w-1/2 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                                    <div className="glass-card p-6">
-                                        <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                                        <p className="mt-2 text-gray-300">{item.description}</p>
-                                    </div>
+                                <div className={`w-1/2 ${index % 2 === 0 ? 'pr-8 text-right' : ''}`}>
+                                    {index % 2 === 0 && (
+                                        <div className="glass-card p-6">
+                                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                                            <p className="mt-2 text-gray-300">{item.description}</p>
+                                        </div>
+                                    )}
                                 </div>
+
                                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex-shrink-0 flex items-center justify-center z-10 shadow-lg shadow-indigo-600/50">
                                     <span className="text-white font-bold">{index + 1}</span>
                                 </div>
-                                <div className="w-1/2"></div>
+
+                                <div className={`w-1/2 ${index % 2 !== 0 ? 'pl-8 text-left' : ''}`}>
+                                    {index % 2 !== 0 && (
+                                        <div className="glass-card p-6">
+                                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                                            <p className="mt-2 text-gray-300">{item.description}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
