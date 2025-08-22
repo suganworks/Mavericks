@@ -60,14 +60,14 @@ const HackathonSecurityWrapper = ({
             </div>
             <div className="flex items-center gap-2">
               {isHackathonEnded && (
-                <span className="text-red-400 font-semibold">ðŸš¨ HACKATHON ENDED</span>
+                <span className="text-red-400 font-semibold">🚨 HACKATHON ENDED</span>
               )}
               <button
                 onClick={clearSecurityMessage}
                 className="text-gray-400 hover:text-white"
                 title="Clear security message"
               >
-                âœ•
+                ✕
               </button>
             </div>
           </div>
@@ -84,7 +84,7 @@ const HackathonSecurityWrapper = ({
       {/* Hackathon Ended Warning */}
       {isHackathonEnded && (
         <div className="fixed top-12 left-1/2 transform -translate-x-1/2 z-40 bg-red-900/90 border border-red-500/50 rounded-lg px-4 py-2 text-red-200 text-sm shadow-lg">
-          ðŸš¨ Hackathon has ended. Submissions are now locked.
+          🚨 Hackathon has ended. Submissions are now locked.
         </div>
       )}
 
@@ -94,7 +94,7 @@ const HackathonSecurityWrapper = ({
       </div>
 
       {/* Security Controls (for debugging/development) */}
-      {process.env.NODE_ENV === 'development' && (
+  {import.meta.env.DEV && (
         <div className="fixed bottom-4 right-4 z-40 bg-gray-800 border border-gray-600 rounded-lg p-3 text-xs">
           <div className="text-gray-300 mb-2">Security Debug:</div>
           <div className="space-y-1 text-gray-400">

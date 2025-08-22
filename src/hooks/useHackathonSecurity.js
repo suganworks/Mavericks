@@ -81,7 +81,7 @@ const useHackathonSecurity = ({
       const now = new Date();
       if (now >= hackathonEndTime && !isHackathonEnded) {
         setIsHackathonEnded(true);
-        setSecurityMessage("âš ï¸ Hackathon has ended. Submissions are now locked.");
+  setSecurityMessage("⚠️ Hackathon has ended. Submissions are now locked.");
         if (onHackathonEnded && typeof onHackathonEnded === 'function') {
           onHackathonEnded();
         }
@@ -115,11 +115,11 @@ const useHackathonSecurity = ({
           }
           
           // Set warning message
-          setSecurityMessage(`âš ï¸ Tab switching detected! Warning ${newCount}/${maxWarnings}. Your submission will be auto-submitted if you continue.`);
+          setSecurityMessage(`⚠️ Tab switching detected! Warning ${newCount}/${maxWarnings}. Your submission will be auto-submitted if you continue.`);
           
           // Auto-submit after max warnings
           if (newCount >= maxWarnings) {
-            setSecurityMessage("ðŸš¨ Too many tab switches detected! Auto-submitting your work...");
+            setSecurityMessage("🚨 Too many tab switches detected! Auto-submitting your work...");
             if (onAutoSubmit && typeof onAutoSubmit === 'function') {
               onAutoSubmit();
             }
@@ -154,11 +154,11 @@ const useHackathonSecurity = ({
         }
         
         // Set warning message
-        setSecurityMessage(`âš ï¸ Window switching detected! Warning ${newCount}/${maxWarnings}. Your submission will be auto-submitted if you continue.`);
+  setSecurityMessage(`⚠️ Window switching detected! Warning ${newCount}/${maxWarnings}. Your submission will be auto-submitted if you continue.`);
         
         // Auto-submit after max warnings
         if (newCount >= maxWarnings) {
-          setSecurityMessage("ðŸš¨ Too many window switches detected! Auto-submitting your work...");
+          setSecurityMessage("🚨 Too many window switches detected! Auto-submitting your work...");
           if (onAutoSubmit && typeof onAutoSubmit === 'function') {
             onAutoSubmit();
           }
@@ -193,7 +193,7 @@ const useHackathonSecurity = ({
     
     const preventRightClick = (e) => {
       e.preventDefault();
-      setSecurityMessage("âš ï¸ Right-click is disabled in hackathon mode.");
+  setSecurityMessage("⚠️ Right-click is disabled in hackathon mode.");
       setTimeout(() => setSecurityMessage(""), 3000);
       return false;
     };
@@ -213,7 +213,7 @@ const useHackathonSecurity = ({
       // Prevent F12
       if (e.keyCode === 123) {
         e.preventDefault();
-        setSecurityMessage("âš ï¸ Developer tools are disabled in hackathon mode.");
+  setSecurityMessage("⚠️ Developer tools are disabled in hackathon mode.");
         setTimeout(() => setSecurityMessage(""), 3000);
         return false;
       }
@@ -221,7 +221,7 @@ const useHackathonSecurity = ({
       // Prevent Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
       if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
         e.preventDefault();
-        setSecurityMessage("âš ï¸ Developer tools are disabled in hackathon mode.");
+  setSecurityMessage("⚠️ Developer tools are disabled in hackathon mode.");
         setTimeout(() => setSecurityMessage(""), 3000);
         return false;
       }
@@ -242,7 +242,7 @@ const useHackathonSecurity = ({
       // Prevent Ctrl+C, Ctrl+V, Ctrl+X
       if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || e.keyCode === 88)) {
         e.preventDefault();
-        setSecurityMessage("âš ï¸ Copy/paste is disabled in hackathon mode.");
+  setSecurityMessage("⚠️ Copy/paste is disabled in hackathon mode.");
         setTimeout(() => setSecurityMessage(""), 3000);
         return false;
       }
@@ -250,7 +250,7 @@ const useHackathonSecurity = ({
       // Prevent Ctrl+Insert, Shift+Insert
       if ((e.ctrlKey && e.keyCode === 45) || (e.shiftKey && e.keyCode === 45)) {
         e.preventDefault();
-        setSecurityMessage("âš ï¸ Copy/paste is disabled in hackathon mode.");
+  setSecurityMessage("⚠️ Copy/paste is disabled in hackathon mode.");
         setTimeout(() => setSecurityMessage(""), 3000);
         return false;
       }

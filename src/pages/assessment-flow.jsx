@@ -639,6 +639,8 @@ const AssessmentFlow = () => {
     const [showCodingSection, setShowCodingSection] = useState(false);
     const [showResultSection, setShowResultSection] = useState(false);
     const [totalScore, setTotalScore] = useState(0);
+    // local loading state to satisfy security hook condition and avoid undefined variable
+    const [loading, setLoading] = useState(false);
     
     // Assessment security implementation
     const { tabSwitchWarnings } = useAssessmentSecurity({
@@ -649,7 +651,7 @@ const AssessmentFlow = () => {
             setIsTimeUp(true);
             autoSubmitCode();
         },
-        isActive: showCodingSection && isAssessmentStarted && !isTimeUp && !loading
+    isActive: showCodingSection && isAssessmentStarted && !isTimeUp && !loading
     });
 
     // --- User Authentication ---

@@ -232,7 +232,7 @@ export default function ChallengeWorkspace() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-API-Key": process.env.REACT_APP_API_KEY,
+            "X-API-Key": import.meta.env.VITE_API_KEY,
           },
           body: JSON.stringify({
             code,
@@ -313,7 +313,7 @@ export default function ChallengeWorkspace() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-API-Key": process.env.REACT_APP_API_KEY,
+          "X-API-Key": import.meta.env.VITE_API_KEY,
         },
         body: JSON.stringify({
           code,

@@ -8,28 +8,10 @@ import * as monaco from 'monaco-editor';
 export const configureMonacoSecurity = (editor, onSecurityViolation = null) => {
   if (!editor) return;
 
-  // Disable copy/paste commands
-  const disableCommands = [
-    'editor.action.clipboardCopyAction',
-    'editor.action.clipboardPasteAction',
-    'editor.action.clipboardCutAction',
-    'editor.action.clipboardPasteAsPlainTextAction'
-  ];
-
-  disableCommands.forEach(commandId => {
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
-      if (onSecurityViolation) onSecurityViolation('copy');
-      return false;
-    });
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
-      if (onSecurityViolation) onSecurityViolation('paste');
-      return false;
-    });
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
-      if (onSecurityViolation) onSecurityViolation('cut');
-      return false;
-    });
-  });
+  // Disable copy/cut/paste shortcuts
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => { if (onSecurityViolation) onSecurityViolation('copy'); return false; });
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => { if (onSecurityViolation) onSecurityViolation('paste'); return false; });
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => { if (onSecurityViolation) onSecurityViolation('cut'); return false; });
 
   // Disable right-click context menu
   editor.onContextMenu(() => {
