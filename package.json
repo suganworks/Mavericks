@@ -11,7 +11,9 @@
     "add-admin": "node scripts/add_admin.js",
     "db:setup": "node scripts/setup-database.js",
     "db:seed": "node scripts/seed-problems.js",
-    "db:insert-problems": "node scripts/insert-problems.js"
+    "db:insert-problems": "node scripts/insert-problems.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@testing-library/jest-dom": "^6.8.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
@@ -57,6 +60,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
-    "vite": "^7.0.4"
+    "jsdom": "^26.1.0",
+    "vite": "^7.0.4",
+    "vitest": "^2.1.1"
   }
 }
