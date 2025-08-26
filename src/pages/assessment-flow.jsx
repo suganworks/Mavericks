@@ -995,6 +995,15 @@ const AssessmentFlow = () => {
                     }),
                 });
 
+                const contentType = response.headers.get('content-type');
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Server error: ${response.status} - ${text}`);
+                }
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Non-JSON response: ${text}`);
+                }
                 const result = await response.json();
                 const passed = !result.error && result.output.trim() === testCase.expected_output.trim();
                 
@@ -1052,7 +1061,7 @@ const AssessmentFlow = () => {
             
         } catch (error) {
             console.error("Error submitting code:", error);
-            setOutput(`Error: ${error.message}`);
+            setOutput(`Error submitting code: ${error.message}`);
             setMood("fail");
         } finally {
             setIsSubmitting(false);
